@@ -19,6 +19,24 @@
             zoom: 14
         });
     });
+    // Создадим поисковую строку.
+    var inputSearch = new ymaps.control.SearchControl({
+        options: {
+            // Пусть элемент управления будет
+            // в виде поисковой строки.
+            size: 'large',
+            // Включим возможность искать
+            // не только топонимы, но и организации.
+            provider: 'yandex#search'
+        }
+    }),
+// Добавим поисковую строку на карту.
+    myMap = new ymaps.Map('map', {
+        zoom: 12,
+        center: [55.76, 37.64],
+        controls: [inputSearch]
+    });
+
 </script>
 </body>
 </html>

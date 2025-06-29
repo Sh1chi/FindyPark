@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.myapplication"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -45,4 +45,12 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    // Облегченная библиотека, содержит только карту, слой пробок,
+    // LocationManager, UserLocationLayer
+    // и возможность скачивать офлайн-карты (только в платной версии).
+    implementation("com.yandex.android:maps.mobile:4.17.0-lite")
+    // Полная библиотека в дополнение к lite версии предоставляет автомобильную маршрутизацию,
+    // веломаршрутизацию, пешеходную маршрутизацию и маршрутизацию на общественном транспорте,
+    // поиск, suggest, геокодирование и отображение панорам.
+    // implementation 'com.yandex.android:maps.mobile:4.17.0-full'
 }

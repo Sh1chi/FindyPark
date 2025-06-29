@@ -16,6 +16,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://maven.google.com") }
+        maven { url = uri("https://artifactory-external.vkpartner.ru/artifactory/maven/") } // если нужна Yandex MapKit
     }
 }
 
