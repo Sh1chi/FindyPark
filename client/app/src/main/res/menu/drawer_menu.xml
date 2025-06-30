@@ -1,8 +1,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_parking"
-        android:title="Парковки" />
+        android:title="@string/parkings" />
     <item
         android:id="@+id/nav_settings"
-        android:title="Настройки" />
+        android:title="@string/settings" />
 </menu>
