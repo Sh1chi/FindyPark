@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SettingsActivity">
+    tools:context=".AboutActivity">
 
     <LinearLayout
         android:layout_width="411dp"
@@ -27,7 +27,7 @@
             android:id="@+id/aboutLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/settings"
+            android:text="@string/about_app"
             android:textSize="24sp" />
     </LinearLayout>
 

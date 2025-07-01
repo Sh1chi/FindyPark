@@ -85,6 +85,12 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(this, SettingsActivity::class.java)
                     startActivity(intent)
                 }
+                R.id.nav_about -> {
+                    Toast.makeText(this, "О приложении", Toast.LENGTH_SHORT).show()
+                    // Переходим в о приложении
+                    val intent = Intent(this, AboutActivity::class.java)
+                    startActivity(intent)
+                }
             }
             drawerLayout.closeDrawer(GravityCompat.START) // закрываем меню после выбора
             true
