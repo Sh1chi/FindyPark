@@ -69,13 +69,10 @@ class MainActivity : AppCompatActivity() {
             return // Прерываем выполнение onCreate
         }
 
-
-
-        // Инициализация Yandex MapKit SDK
-        MapKitFactory.setApiKey("4b8cdf43-eedc-4ebe-abc2-650f0e379413")
-        MapKitFactory.initialize(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+            // Инициализация элементов UI
         // Получаем MapView и настраиваем камеру (центр и зум)
         mapView = findViewById(R.id.mapview)
         val map = mapView.mapWindow.map

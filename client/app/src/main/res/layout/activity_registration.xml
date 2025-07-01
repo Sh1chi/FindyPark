@@ -71,12 +71,12 @@
         android:layout_marginBottom="8dp"
         android:paddingVertical="12dp"/>
 
-    <!-- Кнопка входа по ссылке -->
+    <!-- Кнопка ЗАБЫЛИ ПАРОЛЬ -->
     <Button
-        android:id="@+id/btnEmailLink"
+        android:id="@+id/btnForgotPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Войти по ссылке на email"
+        android:text="Забыли пароль?"
         android:textColor="@android:color/holo_blue_dark"
         android:backgroundTint="@android:color/transparent"
         android:layout_marginBottom="16dp"

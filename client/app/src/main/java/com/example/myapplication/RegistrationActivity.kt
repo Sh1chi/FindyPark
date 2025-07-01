@@ -27,14 +27,12 @@ class RegistrationActivity : AppCompatActivity() {
 
         auth = Firebase.auth
 
-        // Обработка входящих ссылок для Email Link
-        handleSignInLink(intent)
 
         val etEmail = findViewById<EditText>(R.id.etEmail)
         val etPassword = findViewById<EditText>(R.id.etPassword)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
-        val btnEmailLink = findViewById<Button>(R.id.btnEmailLink)
+        val btnForgotPassword = findViewById<Button>(R.id.btnForgotPassword)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val tvError = findViewById<TextView>(R.id.tvError)
 
@@ -62,15 +60,8 @@ class RegistrationActivity : AppCompatActivity() {
             }
         }
 
-        // Вход по Email Link
-        btnEmailLink.setOnClickListener {
-            val email = etEmail.text.toString()
-
-            if (email.isNotEmpty()) {
-                sendSignInLink(email)
-            } else {
-                Toast.makeText(this, "Введите email", Toast.LENGTH_SHORT).show()
-            }
+        btnForgotPassword.setOnClickListener {
+            Toast.makeText(this, "Функция восстановления пароля в разработке", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -105,61 +96,6 @@ class RegistrationActivity : AppCompatActivity() {
                         "Ошибка входа: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
-                }
-            }
-        }
-    }
-
-    private fun sendSignInLink(email: String) {
-        val actionCodeSettings = ActionCodeSettings.newBuilder()
-            .setUrl("https://your_domain.page.link/finishSignUp") // Замените на ваш домен
-            .setHandleCodeInApp(true)
-            .setAndroidPackageName(
-                "com.example.myapplication", // Ваш пакет
-                true, // Установить, если приложение установлено
-                "1"   // Минимальная версия
-            )
-            .build()
-
-        auth.sendSignInLinkToEmail(email, actionCodeSettings)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Toast.makeText(
-                        this,
-                        "Ссылка для входа отправлена на $email",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Ошибка отправки ссылки: ${task.exception?.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-    }
-
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        intent?.let { handleSignInLink(it) }
-    }
-
-    private fun handleSignInLink(intent: Intent) {
-        val link = intent.data?.toString()
-        if (link != null) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    auth.signInWithEmailLink("", link).await()
-                    startActivity(Intent(this@RegistrationActivity, MainActivity::class.java))
-                    finish()
-                } catch (e: Exception) {
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@RegistrationActivity,
-                            "Ошибка входа по ссылке: ${e.message}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
                 }
             }
         }
