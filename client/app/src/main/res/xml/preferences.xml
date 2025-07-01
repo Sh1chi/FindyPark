@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <SwitchPreferenceCompat
+        app:key="pref_notifications"
+        app:title="Уведомления"
+        app:summary="Включить или отключить уведомления"
+        app:defaultValue="true" />
+
+    <ListPreference
+        app:key="pref_theme"
+        app:title="Тема приложения"
+        app:entries="@array/theme_options"
+        app:entryValues="@array/theme_values"
+        app:defaultValue="light"
+        app:summary="%s" />
+
+    <EditTextPreference
+        app:key="pref_username"
+        app:title="Имя пользователя"
+        app:dialogTitle="Введите ваше имя" />
+</PreferenceScreen>
