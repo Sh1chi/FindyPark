@@ -61,4 +61,14 @@ dependencies {
     // поиск, suggest, геокодирование и отображение панорам.
     // implementation 'com.yandex.android:maps.mobile:4.17.0-full'
     implementation("androidx.preference:preference-ktx:1.2.0")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.squareup.moshi:moshi:1.14.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.14.0")
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+// Coroutines (для асинхронных запросов)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
+
 }
