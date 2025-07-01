@@ -39,8 +39,6 @@ class ParkingsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val parkingList = ApiClient.parkingApi.getParkings()
-                Log.d("API_RESPONSE", parkingList.toString())
-
                 adapter = ParkingAdapter(parkingList) { spot ->
                     Toast.makeText(this@ParkingsActivity, "Выбрана: ${spot.name}", Toast.LENGTH_SHORT).show()
                 }
