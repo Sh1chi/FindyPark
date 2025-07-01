@@ -16,10 +16,12 @@ REQUEST_TIMEOUT = 40     # Таймаут запроса (секунды)
 MAX_RETRIES = 3          # Количество попыток при ошибках
 RETRY_DELAY = 15         # Задержка между попытками (секунды)
 
+# Просто переключатель: в тестах True, в проде — False
+IS_TEST = False
+MAX_TOTAL = 10      # Лимит получаемых записей для теста
+
 log      = logging.getLogger(__name__)
 settings = get_settings()
-
-
 
 def _map_row(row: dict) -> Optional[Parking]:
     """
@@ -142,19 +144,41 @@ async def _fetch_all() -> List[Parking]:
     log.info("Fetched %s parking rows total", len(results))
     return results
 
+async def _fetch_limited() -> List[Parking]:
+    """
+    Единственный запрос, возвращает первые 10 записей — только для тестов.
+    """
+    results: List[Parking] = []
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+        batch = await _safe_get(client, {
+            "$top":    10,
+            "$skip":   0,
+            "api_key": settings.data_mos_token,
+        })
+        if not batch:
+            return results
+        for row in batch[:10]:
+            if p := _map_row(row):
+                results.append(p)
+    log.info("Fetched %s parking rows (test)", len(results))
+    return results
+
 
 async def refresh_data(app_state):
     """
-    Фоновая задача: обновление данных о парковках каждые 15 минут.
+    Фоновая задача: обновление данных о парковках каждые 60 минут.
 
     Args:
         app_state: Состояние приложения для хранения парковок.
     """
     while True:
         try:
-            app_state.parkings = await _fetch_all()
-            log.info("Parking dataset refreshed: %s records",
-                     len(app_state.parkings))
+            if IS_TEST:
+                app_state.parkings = await _fetch_limited()
+                log.info("Test-mode fetch: %s records", len(app_state.parkings))
+            else:
+                app_state.parkings = await _fetch_all()
+                log.info("Full fetch: %s records", len(app_state.parkings))
         except Exception:
             log.warning("Dataset refresh failed:\n%s", traceback.format_exc())
         await asyncio.sleep(60 * 60)
