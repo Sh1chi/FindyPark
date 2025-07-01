@@ -7,8 +7,8 @@ object ApiClient {
     private const val BASE_URL = "http://10.0.2.2:8000/"
     // http://10.0.2.2:8000/ - для работы в эмуляторе
     // Чтобы подключиться через устройство по USB - сначала введите adb reverse tcp:8000 tcp:8000
-    // в cmd своего компа. Для этого в переменных средах, в Path добавьте путь
-    // C:\Users\ИМЯ ПОЛЬЗОВАТЕЛЯ\AppData\Local\Android\Sdk\platform-toolsadb.exe
+    // в cmd своего компа. После этого в переменных средах, в Path добавьте путь
+    // C:\Users\ИМЯ ПОЛЬЗОВАТЕЛЯ\AppData\Local\Android\Sdk\platform-tools
     // Затем здесь поменяйте адрес на http://127.0.0.1:8000/
 
     val parkingApi: ParkingApi by lazy {
