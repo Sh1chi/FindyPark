@@ -1,6 +1,8 @@
 package com.example.myapplication
 
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.webkit.WebView
 import android.widget.Button
@@ -17,6 +19,9 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
@@ -35,6 +40,8 @@ import com.squareup.moshi.*
 private lateinit var mapView: MapView
 private lateinit var drawerLayout: DrawerLayout
 private lateinit var navigationView: NavigationView
+private lateinit var auth: FirebaseAuth // Добавлено для Firebase Auth
+
 private val client = OkHttpClient()
 
 class MainActivity : AppCompatActivity() {
@@ -49,7 +56,21 @@ class MainActivity : AppCompatActivity() {
         true // возвращаем true, чтобы событие не передавалось дальше
     }
 
+        //////////////////////////////////////////////
+    @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Инициализация Firebase Auth
+        auth = Firebase.auth
+
+        // Проверка авторизации
+        if (auth.currentUser == null) {
+            startActivity(Intent(this, RegistrationActivity::class.java))
+            finish()
+            return // Прерываем выполнение onCreate
+        }
+
+
+
         // Инициализация Yandex MapKit SDK
         MapKitFactory.setApiKey("4b8cdf43-eedc-4ebe-abc2-650f0e379413")
         MapKitFactory.initialize(this)
@@ -108,6 +129,14 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(this, AboutActivity::class.java)
                     startActivity(intent)
                 }
+                // Добавлен пункт выхода
+                R.id.nav_logout -> { // Добавленный пункт
+                    auth.signOut()
+                    startActivity(Intent(this, RegistrationActivity::class.java))
+                    finish()
+
+                }
+
             }
             drawerLayout.closeDrawer(GravityCompat.START) // закрываем меню после выбора
             true
@@ -115,14 +144,24 @@ class MainActivity : AppCompatActivity() {
         // Получаем header (шапку) меню и кнопку в нём
         val navigationView = findViewById<NavigationView>(R.id.navigationView)
         val header = navigationView.inflateHeaderView(R.layout.nav_header)
-        // Обработка нажатия на кнопку в хедере (например, "Войти/зарегистрироваться")
+
+
+            // Обработка нажатия на кнопку в хедере (например, "Войти/зарегистрироваться")
         val headerButton = header.findViewById<Button>(R.id.headerButton)
-        headerButton.setOnClickListener {
-            Toast.makeText(this, "Кнопка из меню нажата", Toast.LENGTH_SHORT).show()
-            // открываем экран регистрации
-            val intent = Intent(this, RegistrationActivity::class.java)
-            startActivity(intent)
-        }
+            // Обновляем кнопку в зависимости от статуса авторизации
+            if (auth.currentUser != null) {
+                headerButton.text = "Выйти (${auth.currentUser?.email})"
+                headerButton.setOnClickListener {
+                    auth.signOut()
+                    startActivity(Intent(this, RegistrationActivity::class.java))
+                    finish()
+                }
+            } else {
+                headerButton.text = "Войти/Регистрация"
+                headerButton.setOnClickListener {
+                    startActivity(Intent(this, RegistrationActivity::class.java))
+                }
+            }
     }
 
     private fun fetchAndDisplayParkings() {
@@ -185,4 +224,20 @@ class MainActivity : AppCompatActivity() {
         MapKitFactory.getInstance().onStop()
         super.onStop()
     }
+
+    // Обработка входящих ссылок для email-аутентификации
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.data?.toString()?.let { link ->
+            if (auth.isSignInWithEmailLink(link)) {
+                val authIntent = Intent(this, RegistrationActivity::class.java).apply {
+                    data = Uri.parse(link)
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                }
+                startActivity(authIntent)
+                finish()
+            }
+        }
+    }
+
 }

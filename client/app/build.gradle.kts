@@ -1,6 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+
+    // Firebase
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -60,6 +63,26 @@ dependencies {
     // веломаршрутизацию, пешеходную маршрутизацию и маршрутизацию на общественном транспорте,
     // поиск, suggest, геокодирование и отображение панорам.
     // implementation 'com.yandex.android:maps.mobile:4.17.0-full'
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
+
+    /*
+    * Блок для аутентификации с помощью Firebase
+    */
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+
+    // Firebase Auth
+    implementation("com.google.firebase:firebase-auth-ktx")
+
+    // Для работы с корутинами
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    // Lifecycle components
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+    implementation("androidx.activity:activity-ktx:1.8.0")
     implementation("androidx.preference:preference-ktx:1.2.0")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.squareup.moshi:moshi:1.14.0")

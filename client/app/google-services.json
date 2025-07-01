@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "802565053796",
+    "project_id": "findypark",
+    "storage_bucket": "findypark.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802565053796:android:97583bb9a4c82e1dd4ee71",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNBiTZaJjZhLb9tKMlZSLRboM98VF1EhU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

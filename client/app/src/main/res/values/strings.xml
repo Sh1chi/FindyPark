@@ -5,5 +5,6 @@
     <string name="parking_list">Список парковок</string>
     <string name="parkings">Парковки</string>
     <string name="settings">Настройки</string>
+    <string name="logout">Выход</string>
     <string name="about_app">О приложении</string>
 </resources>
