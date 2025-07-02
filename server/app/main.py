@@ -5,6 +5,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.db import test_connection
 
 from app.services.sync import refresh_data
 from app.models.parking import Parking
@@ -29,14 +30,15 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def on_startup():
+    await test_connection()  # проверяем и логируем
     """
     Обработчик события запуска приложения.
 
     Инициализирует контейнер для парковок и запускает фоновую
     задачу по периодической синхронизации данных.
     """
-    app.state.parkings = []   # Хранилище данных о парковках в памяти приложения
-    asyncio.create_task(refresh_data(app.state)) # Запуск фоновой синхронизации
+    #app.state.parkings = []   # Хранилище данных о парковках в памяти приложения
+    #asyncio.create_task(refresh_data(app.state)) # Запуск фоновой синхронизации
 
 
 @app.get("/parkings", response_model=list[Parking])
