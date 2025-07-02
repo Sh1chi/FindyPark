@@ -14,6 +14,7 @@ import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.navigation.NavigationView
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
@@ -35,6 +36,7 @@ import okhttp3.Response
 import java.io.IOException
 import okhttp3.*
 import com.squareup.moshi.*
+import kotlinx.coroutines.launch
 
 // Объявляем глобальные переменные для карты и бокового меню
 private lateinit var mapView: MapView
@@ -72,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-            // Инициализация элементов UI
+        // Инициализация элементов UI
         // Получаем MapView и настраиваем камеру (центр и зум)
         mapView = findViewById(R.id.mapview)
         val map = mapView.mapWindow.map
@@ -84,17 +86,6 @@ class MainActivity : AppCompatActivity() {
                 0.0f   // наклон
             )
         )
-        // Загружаем изображение и добавляем метку на карту
-//        val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pin)
-//        val placemark = mapView.map.mapObjects.addPlacemark().apply {
-//            geometry = Point(55.751225, 37.62954)
-//            setIcon(imageProvider)
-//        }
-//        placemark.addTapListener(placemarkTapListener)
-
-        // Выводим все парковки из списка на карту
-        fetchAndDisplayParkings()
-
 
         // Получаем доступ к DrawerLayout и NavigationView
         drawerLayout = findViewById(R.id.drawerLayout)
@@ -105,6 +96,7 @@ class MainActivity : AppCompatActivity() {
             // открываем меню слева
             drawerLayout.openDrawer(GravityCompat.START)
         }
+
         // Обработка выбора пунктов меню
         navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
@@ -131,19 +123,36 @@ class MainActivity : AppCompatActivity() {
                     auth.signOut()
                     startActivity(Intent(this, RegistrationActivity::class.java))
                     finish()
-
                 }
-
             }
             drawerLayout.closeDrawer(GravityCompat.START) // закрываем меню после выбора
             true
         }
+            // Загрузка парковок из кэша и добавление на карту
+            lifecycleScope.launch {
+                try {
+                    val parkings = ParkingRepository.getParkings()
+                    val icon = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
+
+                    for (p in parkings) {
+                        val placemark = map.mapObjects.addPlacemark().apply {
+                            geometry = Point(p.lat, p.lon)
+                            setIcon(icon)
+                            addTapListener(placemarkTapListener)
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "Ошибка загрузки карты: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            }
+
         // Получаем header (шапку) меню и кнопку в нём
         val navigationView = findViewById<NavigationView>(R.id.navigationView)
         val header = navigationView.inflateHeaderView(R.layout.nav_header)
 
 
-            // Обработка нажатия на кнопку в хедере (например, "Войти/зарегистрироваться")
+        // Обработка нажатия на кнопку в хедере (например, "Войти/зарегистрироваться")
         val headerButton = header.findViewById<Button>(R.id.headerButton)
             // Обновляем кнопку в зависимости от статуса авторизации
             if (auth.currentUser != null) {
@@ -159,54 +168,6 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(this, RegistrationActivity::class.java))
                 }
             }
-    }
-
-    private fun fetchAndDisplayParkings() {
-        val request = Request.Builder()
-            .url("http://10.0.2.2:8000/parkings")
-            //http://10.0.2.2:8000/parkings - для эмулятора
-            //http://127.0.0.1:8000/parkings - для USB
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Ошибка загрузки: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                val body = response.body?.string()
-                if (body != null) {
-                    val moshi = Moshi.Builder()
-                        .add(KotlinJsonAdapterFactory())
-                        .build()
-                    val type = Types.newParameterizedType(List::class.java, ParkingSpot::class.java)
-                    val adapter: JsonAdapter<List<ParkingSpot>> = moshi.adapter(type)
-
-                    val parkings = adapter.fromJson(body)
-                    if (parkings != null) {
-                        runOnUiThread {
-                            addParkingsToMap(parkings)
-                        }
-                    }
-                }
-            }
-        })
-    }
-
-    private fun addParkingsToMap(parkings: List<ParkingSpot>) {
-        val mapObjects = mapView.map.mapObjects
-        val pinIcon = ImageProvider.fromResource(this, R.drawable.ic_pin)
-
-        for (parking in parkings) {
-            val placemark = mapObjects.addPlacemark(
-                Point(parking.lat, parking.lon)
-            )
-            placemark.setIcon(pinIcon)
-            placemark.userData = parking
-            placemark.addTapListener(placemarkTapListener)
-        }
     }
 
     // Активируем карту при старте активности
