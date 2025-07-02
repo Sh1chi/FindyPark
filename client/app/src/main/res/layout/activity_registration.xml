@@ -1,44 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white"
     tools:context=".RegistrationActivity">
 
-    <LinearLayout
-        android:layout_width="409dp"
-        android:layout_height="729dp"
-        android:orientation="vertical"
-        tools:layout_editor_absoluteX="1dp"
-        tools:layout_editor_absoluteY="1dp">
+    <!-- Заголовок -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Регистрация и вход"
+        android:textSize="24sp"
+        android:textColor="@android:color/black"
+        android:textAlignment="center"
+        android:layout_marginBottom="24dp"
+        android:textStyle="bold"/>
 
-        <TextView
-            android:id="@+id/textView"
+    <!-- Поле ввода email -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TextView" />
+            android:hint="Email"
+            android:inputType="textEmailAddress"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/editTextTextEmailAddress"
+    <!-- Поле ввода пароля -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ems="10"
-            android:inputType="textEmailAddress" />
+            android:hint="Пароль"
+            android:inputType="textPassword"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/editTextTextPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:inputType="textPassword" />
+    <!-- Кнопка регистрации -->
+    <Button
+        android:id="@+id/btnRegister"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Зарегистрироваться"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@android:color/holo_purple"
+        android:layout_marginBottom="8dp"
+        android:paddingVertical="12dp"/>
 
-        <Button
-            android:id="@+id/button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Button" />
+    <!-- Кнопка входа -->
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Войти"
+        android:textColor="@android:color/black"
+        android:backgroundTint="@android:color/darker_gray"
+        android:layout_marginBottom="8dp"
+        android:paddingVertical="12dp"/>
 
-    </LinearLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- Кнопка ЗАБЫЛИ ПАРОЛЬ -->
+    <Button
+        android:id="@+id/btnForgotPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Забыли пароль?"
+        android:textColor="@android:color/holo_blue_dark"
+        android:backgroundTint="@android:color/transparent"
+        android:layout_marginBottom="16dp"
+        android:paddingVertical="12dp"/>
+
+    <!-- Прогресс-бар -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
+    <!-- Сообщения об ошибках -->
+    <TextView
+        android:id="@+id/tvError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/holo_red_dark"
+        android:textAlignment="center"
+        android:visibility="gone"/>
+
+</LinearLayout>

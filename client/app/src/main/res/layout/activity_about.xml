@@ -5,18 +5,17 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ParkingsActivity">
+    tools:context=".AboutActivity">
 
     <LinearLayout
-        android:id="@+id/linearLayout"
         android:layout_width="411dp"
         android:layout_height="48dp"
         android:background="@android:color/holo_blue_bright"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         app:layout_constraintTop_toTopOf="parent"
-        tools:layout_editor_absoluteX="0dp"
-        tools:ignore="MissingConstraints">
+        tools:ignore="MissingConstraints"
+        tools:layout_editor_absoluteX="0dp">
 
         <ImageButton
             android:id="@+id/backButton"
@@ -26,24 +25,11 @@
             android:src="@drawable/ic_back" />
 
         <TextView
-            android:id="@+id/parkingLabel"
+            android:id="@+id/aboutLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/parking_list"
+            android:text="@string/about_app"
             android:textSize="24sp" />
     </LinearLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:layout_width="411dp"
-        android:layout_height="796dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        android:clipToPadding="false"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

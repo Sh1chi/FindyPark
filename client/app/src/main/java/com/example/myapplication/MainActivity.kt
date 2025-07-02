@@ -1,6 +1,8 @@
 package com.example.myapplication
 
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.webkit.WebView
 import android.widget.Button
@@ -12,18 +14,37 @@ import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.navigation.NavigationView
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.image.ImageProvider
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.Request
+import okhttp3.Response
+import java.io.IOException
+import okhttp3.*
+import com.squareup.moshi.*
+import kotlinx.coroutines.launch
 
 // Объявляем глобальные переменные для карты и бокового меню
 private lateinit var mapView: MapView
 private lateinit var drawerLayout: DrawerLayout
 private lateinit var navigationView: NavigationView
+private lateinit var auth: FirebaseAuth // Добавлено для Firebase Auth
+
+private val client = OkHttpClient()
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,12 +58,23 @@ class MainActivity : AppCompatActivity() {
         true // возвращаем true, чтобы событие не передавалось дальше
     }
 
+        //////////////////////////////////////////////
+    @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Инициализация Yandex MapKit SDK
-        MapKitFactory.setApiKey("4b8cdf43-eedc-4ebe-abc2-650f0e379413")
-        MapKitFactory.initialize(this)
+        // Инициализация Firebase Auth
+        auth = Firebase.auth
+
+        // Проверка авторизации
+        if (auth.currentUser == null) {
+            startActivity(Intent(this, RegistrationActivity::class.java))
+            finish()
+            return // Прерываем выполнение onCreate
+        }
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Инициализация элементов UI
         // Получаем MapView и настраиваем камеру (центр и зум)
         mapView = findViewById(R.id.mapview)
         val map = mapView.mapWindow.map
@@ -54,13 +86,7 @@ class MainActivity : AppCompatActivity() {
                 0.0f   // наклон
             )
         )
-        // Загружаем изображение и добавляем метку на карту
-        val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pin)
-        val placemark = mapView.map.mapObjects.addPlacemark().apply {
-            geometry = Point(55.751225, 37.62954)
-            setIcon(imageProvider)
-        }
-        placemark.addTapListener(placemarkTapListener)
+
         // Получаем доступ к DrawerLayout и NavigationView
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
@@ -70,6 +96,7 @@ class MainActivity : AppCompatActivity() {
             // открываем меню слева
             drawerLayout.openDrawer(GravityCompat.START)
         }
+
         // Обработка выбора пунктов меню
         navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
@@ -85,21 +112,62 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(this, SettingsActivity::class.java)
                     startActivity(intent)
                 }
+                R.id.nav_about -> {
+                    Toast.makeText(this, "О приложении", Toast.LENGTH_SHORT).show()
+                    // Переходим в о приложении
+                    val intent = Intent(this, AboutActivity::class.java)
+                    startActivity(intent)
+                }
+                // Добавлен пункт выхода
+                R.id.nav_logout -> { // Добавленный пункт
+                    auth.signOut()
+                    startActivity(Intent(this, RegistrationActivity::class.java))
+                    finish()
+                }
             }
             drawerLayout.closeDrawer(GravityCompat.START) // закрываем меню после выбора
             true
         }
+            // Загрузка парковок из кэша и добавление на карту
+            lifecycleScope.launch {
+                try {
+                    val parkings = ParkingRepository.getParkings()
+                    val icon = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
+
+                    for (p in parkings) {
+                        val placemark = map.mapObjects.addPlacemark().apply {
+                            geometry = Point(p.lat, p.lon)
+                            setIcon(icon)
+                            addTapListener(placemarkTapListener)
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "Ошибка загрузки карты: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            }
+
         // Получаем header (шапку) меню и кнопку в нём
         val navigationView = findViewById<NavigationView>(R.id.navigationView)
         val header = navigationView.inflateHeaderView(R.layout.nav_header)
+
+
         // Обработка нажатия на кнопку в хедере (например, "Войти/зарегистрироваться")
         val headerButton = header.findViewById<Button>(R.id.headerButton)
-        headerButton.setOnClickListener {
-            Toast.makeText(this, "Кнопка из меню нажата", Toast.LENGTH_SHORT).show()
-            // открываем экран регистрации
-            val intent = Intent(this, RegistrationActivity::class.java)
-            startActivity(intent)
-        }
+            // Обновляем кнопку в зависимости от статуса авторизации
+            if (auth.currentUser != null) {
+                headerButton.text = "Выйти (${auth.currentUser?.email})"
+                headerButton.setOnClickListener {
+                    auth.signOut()
+                    startActivity(Intent(this, RegistrationActivity::class.java))
+                    finish()
+                }
+            } else {
+                headerButton.text = "Войти/Регистрация"
+                headerButton.setOnClickListener {
+                    startActivity(Intent(this, RegistrationActivity::class.java))
+                }
+            }
     }
 
     // Активируем карту при старте активности
@@ -114,4 +182,20 @@ class MainActivity : AppCompatActivity() {
         MapKitFactory.getInstance().onStop()
         super.onStop()
     }
+
+    // Обработка входящих ссылок для email-аутентификации
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.data?.toString()?.let { link ->
+            if (auth.isSignInWithEmailLink(link)) {
+                val authIntent = Intent(this, RegistrationActivity::class.java).apply {
+                    data = Uri.parse(link)
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                }
+                startActivity(authIntent)
+                finish()
+            }
+        }
+    }
+
 }
