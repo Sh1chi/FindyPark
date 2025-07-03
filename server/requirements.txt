@@ -8,3 +8,4 @@ python-dotenv==1.0.*
 sqlalchemy==2.0.*
 asyncpg==0.29.*
 alembic==1.13.*
+firebase-admin>=6.0.0,<7.0.0  # Firebase Admin SDK для синхронизации пользователей

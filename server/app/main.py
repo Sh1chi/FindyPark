@@ -1,11 +1,13 @@
-# app/main.py
-
 import asyncio
 import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import test_connection
+from firebase_admin import credentials, initialize_app
+from app.core.config import get_settings
+from app.services.sync import refresh_data
+from app.services.user_sync import refresh_user_data
 
 from app.services.sync import refresh_data
 from app.models.parking import Parking
@@ -14,6 +16,8 @@ from sqlalchemy import text
 
 # Настраиваем базовый логгер
 logging.basicConfig(level=logging.INFO)
+
+settings = get_settings()
 
 # Инициализируем FastAPI-приложение
 app = FastAPI(
@@ -34,6 +38,14 @@ app.add_middleware(
 async def on_startup():
     await test_connection()  # проверяем и логируем
     asyncio.create_task(refresh_data())
+
+    # Инициализируем Firebase Admin SDK
+    cred = credentials.Certificate(settings.firebase_credentials_path)
+    initialize_app(cred)
+
+    # Запускаем фоновые синхронизациии
+    asyncio.create_task(refresh_user_data())
+
     """
     Обработчик события запуска приложения.
 
