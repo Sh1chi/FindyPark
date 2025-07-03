@@ -65,10 +65,15 @@ def _map_row(row: dict) -> Optional[Parking]:
 
     return Parking(
         id=gid,
-        name=cells.get("Address", "Без адреса"),
+        parking_zone_number=cells.get("ParkingZoneNumber", ""),
+        name=cells.get("ParkingName", cells.get("Address", "Без названия")),
+        address=cells.get("Address", ""),
+        adm_area=cells.get("AdmArea"),
+        district=cells.get("District"),
         lat=lat,
         lon=lon,
         capacity=capacity,
+        capacity_disabled=int(cells.get("CarCapacityDisabled") or 0),
         free_spaces=capacity,
     )
 
@@ -176,21 +181,30 @@ async def save_parkings_to_db(parkings: List[Parking]) -> None:
             await session.execute(
                 text("""
                     INSERT INTO parkings
-                      (id, name, address, capacity, capacity_disabled, available_spaces, geom)
+                        (id, parking_zone_number, name, address, adm_area, district, capacity, capacity_disabled, available_spaces, geom)
                     VALUES
-                      (:id, :name, :name, :capacity, 0, :free_spaces,
-                       ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
+                        (:id, :zone, :name, :address, :adm_area, :district, :capacity, :capacity_disabled, :free_spaces,
+                            ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
                     ON CONFLICT (id) DO UPDATE SET
-                      name = EXCLUDED.name,
-                      address = EXCLUDED.address,
-                      capacity = EXCLUDED.capacity,
-                      available_spaces = EXCLUDED.available_spaces,
-                      geom = EXCLUDED.geom
+                        parking_zone_number = EXCLUDED.parking_zone_number,
+                        name                = EXCLUDED.name,
+                        address             = EXCLUDED.address,
+                        adm_area            = EXCLUDED.adm_area,
+                        district            = EXCLUDED.district,
+                        capacity            = EXCLUDED.capacity,
+                        capacity_disabled   = EXCLUDED.capacity_disabled,
+                        available_spaces    = EXCLUDED.available_spaces,
+                        geom                = EXCLUDED.geom
                 """),
                 {
                     "id": p.id,
+                    "zone": p.parking_zone_number,
                     "name": p.name,
+                    "address": p.address,
+                    "adm_area": p.adm_area,
+                    "district": p.district,
                     "capacity": p.capacity,
+                    "capacity_disabled": p.capacity_disabled,
                     "free_spaces": p.free_spaces,
                     "lon": p.lon,
                     "lat": p.lat,
