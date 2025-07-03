@@ -48,6 +48,9 @@ private val client = OkHttpClient()
 
 class MainActivity : AppCompatActivity() {
 
+    // Кнопка бота
+    private lateinit var botButton: ImageButton
+
     // Обработчик нажатия по метке на карте
     private val placemarkTapListener = MapObjectTapListener { _, point ->
         Toast.makeText(
@@ -86,6 +89,13 @@ class MainActivity : AppCompatActivity() {
                 0.0f   // наклон
             )
         )
+
+
+            botButton = findViewById(R.id.botButton)
+            botButton.setOnClickListener {
+                val assistantDialog = AssistantDialog()
+                assistantDialog.show(supportFragmentManager, "assistant_dialog")
+            }
 
         // Получаем доступ к DrawerLayout и NavigationView
         drawerLayout = findViewById(R.id.drawerLayout)
