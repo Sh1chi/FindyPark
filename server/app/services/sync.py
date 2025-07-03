@@ -4,9 +4,11 @@ import traceback
 from typing import List, Optional
 
 import httpx
+from sqlalchemy import text
 
 from app.core.config import get_settings
 from app.models.parking import Parking
+from app.db import async_session
 
 DATASET_ID = 623
 ROWS_URL = f"https://apidata.mos.ru/v1/datasets/{DATASET_ID}/rows"
@@ -17,7 +19,7 @@ MAX_RETRIES = 3          # Количество попыток при ошибк
 RETRY_DELAY = 15         # Задержка между попытками (секунды)
 
 # Просто переключатель: в тестах True, в проде — False
-IS_TEST = False
+IS_TEST = True
 MAX_TOTAL = 10      # Лимит получаемых записей для теста
 
 log      = logging.getLogger(__name__)
@@ -144,6 +146,7 @@ async def _fetch_all() -> List[Parking]:
     log.info("Fetched %s parking rows total", len(results))
     return results
 
+
 async def _fetch_limited() -> List[Parking]:
     """
     Единственный запрос, возвращает первые 10 записей — только для тестов.
@@ -164,21 +167,52 @@ async def _fetch_limited() -> List[Parking]:
     return results
 
 
-async def refresh_data(app_state):
+async def save_parkings_to_db(parkings: List[Parking]) -> None:
+    """
+    Простая вставка/обновление парковок в БД.
+    """
+    async with async_session() as session:
+        for p in parkings:
+            await session.execute(
+                text("""
+                    INSERT INTO parkings
+                      (id, name, address, capacity, capacity_disabled, available_spaces, geom)
+                    VALUES
+                      (:id, :name, :name, :capacity, 0, :free_spaces,
+                       ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
+                    ON CONFLICT (id) DO UPDATE SET
+                      name = EXCLUDED.name,
+                      address = EXCLUDED.address,
+                      capacity = EXCLUDED.capacity,
+                      available_spaces = EXCLUDED.available_spaces,
+                      geom = EXCLUDED.geom
+                """),
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "capacity": p.capacity,
+                    "free_spaces": p.free_spaces,
+                    "lon": p.lon,
+                    "lat": p.lat,
+                }
+            )
+        await session.commit()
+    logging.getLogger(__name__).info("Saved %d parking rows to DB", len(parkings))
+
+
+async def refresh_data() -> None:
     """
     Фоновая задача: обновление данных о парковках каждые 60 минут.
-
-    Args:
-        app_state: Состояние приложения для хранения парковок.
     """
     while True:
         try:
             if IS_TEST:
-                app_state.parkings = await _fetch_limited()
-                log.info("Test-mode fetch: %s records", len(app_state.parkings))
+                parkings = await _fetch_limited()
+                #log.info("Test-mode fetch: %s records", len(app_state.parkings))
             else:
-                app_state.parkings = await _fetch_all()
-                log.info("Full fetch: %s records", len(app_state.parkings))
+                parkings = await _fetch_all()
+                #]log.info("Full fetch: %s records", len(app_state.parkings))
+            await save_parkings_to_db(parkings)
         except Exception:
             log.warning("Dataset refresh failed:\n%s", traceback.format_exc())
         await asyncio.sleep(60 * 60)
