@@ -4,22 +4,14 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.webkit.WebView
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.navigation.NavigationView
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -29,14 +21,9 @@ import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.image.ImageProvider
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.Request
-import okhttp3.Response
-import java.io.IOException
-import okhttp3.*
-import com.squareup.moshi.*
 import kotlinx.coroutines.launch
+import okhttp3.*
+
 
 // Объявляем глобальные переменные для карты и бокового меню
 private lateinit var mapView: MapView
@@ -44,7 +31,6 @@ private lateinit var drawerLayout: DrawerLayout
 private lateinit var navigationView: NavigationView
 private lateinit var auth: FirebaseAuth // Добавлено для Firebase Auth
 
-private val client = OkHttpClient()
 
 class MainActivity : AppCompatActivity() {
 
@@ -58,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         true // возвращаем true, чтобы событие не передавалось дальше
     }
 
-        //////////////////////////////////////////////
+    //////////////////////////////////////////////
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
         // Инициализация Firebase Auth
@@ -73,7 +59,6 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         // Инициализация элементов UI
         // Получаем MapView и настраиваем камеру (центр и зум)
         mapView = findViewById(R.id.mapview)
@@ -128,24 +113,24 @@ class MainActivity : AppCompatActivity() {
             drawerLayout.closeDrawer(GravityCompat.START) // закрываем меню после выбора
             true
         }
-            // Загрузка парковок из кэша и добавление на карту
-            lifecycleScope.launch {
-                try {
-                    val parkings = ParkingRepository.getParkings()
-                    val icon = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
+        // Загружаем парковки и отображаем на карте
+        lifecycleScope.launch {
+            try {
+                val parkings = ParkingRepository.getParkings()
+                val icon = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
 
-                    for (p in parkings) {
-                        val placemark = map.mapObjects.addPlacemark().apply {
-                            geometry = Point(p.lat, p.lon)
-                            setIcon(icon)
-                            addTapListener(placemarkTapListener)
-                        }
+                for (p in parkings) {
+                    val placemark = map.mapObjects.addPlacemark().apply {
+                        geometry = Point(p.lat, p.lon)
+                        setIcon(icon)
+                        addTapListener(placemarkTapListener)
                     }
-
-                } catch (e: Exception) {
-                    Toast.makeText(this@MainActivity, "Ошибка загрузки карты: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 }
+
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Ошибка загрузки карты: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             }
+        }
 
         // Получаем header (шапку) меню и кнопку в нём
         val navigationView = findViewById<NavigationView>(R.id.navigationView)

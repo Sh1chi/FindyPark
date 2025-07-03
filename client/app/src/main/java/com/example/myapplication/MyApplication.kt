@@ -14,3 +14,4 @@ class MyApplication : Application() {
         MapKitFactory.initialize(this)
     }
 }
+
