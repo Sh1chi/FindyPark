@@ -29,6 +29,13 @@ class Settings(BaseSettings):
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
+    sber_auth: str  # Добавляем ключ для GigaChat API
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore"
+    )
+
 @lru_cache
 def get_settings() -> Settings:
     """
