@@ -1,12 +1,14 @@
 import asyncio
 import logging
+from typing import List, Set
 
 from firebase_admin import auth
-from sqlalchemy import text
+from sqlalchemy import text, bindparam
 from app.db import async_session
 from app.models.enums import UserRole, VehicleKind
 
 log = logging.getLogger(__name__)
+POLL_INTERVAL = 60 * 60
 
 
 def _map_user(record: auth.UserRecord) -> dict:
@@ -24,13 +26,10 @@ def _map_user(record: auth.UserRecord) -> dict:
     }
 
 
-async def save_users_to_db(users: list[dict]) -> None:
-    """
-    Upsert пользователей в таблицу users.
-    """
-    async with async_session() as session:
-        for u in users:
-            await session.execute(text("""
+async def _upsert_users(batch: List[dict]) -> None:
+    async with async_session() as ses:
+        for u in batch:
+            await ses.execute(text("""
                 INSERT INTO users
                   (user_uid, display_name, email, phone, role, vehicle_type, plate)
                 VALUES
@@ -40,20 +39,43 @@ async def save_users_to_db(users: list[dict]) -> None:
                   email        = EXCLUDED.email,
                   phone        = EXCLUDED.phone
             """), u)
-        await session.commit()
-    log.info("Синхронизировано %d пользователей", len(users))
+        await ses.commit()
+    log.info("Upserted %d users", len(batch))
+
+
+async def _delete_missing(uids_in_fb: Set[str]) -> None:
+    """
+    Удаляем из БД тех, кого уже нет в Firebase.
+    """
+    if not uids_in_fb:
+        return
+    async with async_session() as ses:
+        result = await ses.execute(
+            text("DELETE FROM users WHERE user_uid NOT IN :uids")
+            .bindparams(bindparam("uids", expanding=True)),
+            {"uids": list(uids_in_fb)},
+        )
+        deleted = result.rowcount
+        await ses.commit()
+        log.info("Deleted %d users not present in Firebase", deleted)
 
 
 async def refresh_user_data() -> None:
     """
-    Фоновая задача: обновление пользователей из Firebase каждые 60 минут.
+    Периодически синхронизирует пользователей с Firebase:
+    1) upsert новых/изменённых,
+    2) удаляет отсутствующих.
     """
     while True:
         try:
-            # Получаем всех пользователей из Firebase
-            records = auth.list_users().iterate_all()
-            batch = [_map_user(r) for r in records]
-            await save_users_to_db(batch)
-        except Exception as e:
-            log.warning("Ошибка синхронизации пользователей: %s", e, exc_info=True)
-        await asyncio.sleep(60 * 60)
+            records = list(auth.list_users().iterate_all())
+            batch   = [_map_user(r) for r in records]
+            uids_fb = {u["user_uid"] for u in batch}
+
+            await _upsert_users(batch)
+            await _delete_missing(uids_fb)
+
+        except Exception as exc:
+            log.warning("Ошибка синхронизации пользователей: %s", exc, exc_info=True)
+
+        await asyncio.sleep(POLL_INTERVAL)
