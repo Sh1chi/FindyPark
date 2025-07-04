@@ -14,8 +14,13 @@ class Parking(BaseModel):
         free_spaces (int): Количество свободных мест.
     """
     id: int
+    parking_zone_number: str
     name: str
+    address: str
+    adm_area: str | None
+    district: str | None
     lat: float = Field(..., ge=-90, le=90)
     lon: float = Field(..., ge=-180, le=180)
     capacity: int
+    capacity_disabled: int
     free_spaces: int
