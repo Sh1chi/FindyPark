@@ -3,7 +3,7 @@ package com.example.myapplication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-// для хранения кэша
+// Singleton-объект для хранения кэша
 
 object ParkingRepository {
     private var cachedParkings: List<ParkingSpot>? = null
