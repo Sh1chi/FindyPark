@@ -13,8 +13,9 @@ class ClusterView(context: Context) : FrameLayout(context) {
         // Настройка круглого фона
         val backgroundDrawable = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
-            setColor(Color.parseColor("#3D5AFE")) // Синий фон
-            setStroke(4, Color.WHITE) // Белая обводка
+            setColor(Color.WHITE) // Синий фон
+            setStroke(5, Color.RED) // Белая обводка
+
         }
 
         // Сам текст (число)
@@ -27,7 +28,7 @@ class ClusterView(context: Context) : FrameLayout(context) {
                 setPadding(32, 32, 32, 32)
             }
             gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
+            setTextColor(Color.BLACK)
             textSize = 16f
             setBackgroundDrawable(backgroundDrawable)
         }
