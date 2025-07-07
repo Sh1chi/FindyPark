@@ -45,19 +45,34 @@ async def _upsert_users(batch: List[dict]) -> None:
 
 async def _delete_missing(uids_in_fb: Set[str]) -> None:
     """
-    Удаляем из БД тех, кого уже нет в Firebase.
+    Удаляем из БД тех пользователей, которых уже нет в Firebase,
+    вместе со всеми их бронированиями.
     """
     if not uids_in_fb:
         return
+
     async with async_session() as ses:
+        # 1) Сначала очищаем брони пользователей, которых больше нет в Firebase
+        await ses.execute(
+            text("""
+                DELETE FROM bookings
+                 WHERE user_uid NOT IN :uids
+            """).bindparams(bindparam("uids", expanding=True)),
+            {"uids": list(uids_in_fb)},
+        )
+
+        # 2) Затем удаляем самих пользователей
         result = await ses.execute(
-            text("DELETE FROM users WHERE user_uid NOT IN :uids")
-            .bindparams(bindparam("uids", expanding=True)),
+            text("""
+                DELETE FROM users
+                 WHERE user_uid NOT IN :uids
+            """).bindparams(bindparam("uids", expanding=True)),
             {"uids": list(uids_in_fb)},
         )
         deleted = result.rowcount
+
         await ses.commit()
-        log.info("Deleted %d users not present in Firebase", deleted)
+        log.info("Deleted %d users (and their bookings) not present in Firebase", deleted)
 
 
 async def refresh_user_data() -> None:

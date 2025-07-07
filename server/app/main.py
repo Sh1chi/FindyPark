@@ -3,16 +3,15 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.db import test_connection
-from firebase_admin import credentials, initialize_app
-from app.core.config import get_settings
-from app.services.sync import refresh_data
-from app.services.user_sync import refresh_user_data
-
-from app.services.sync import refresh_data
-from app.models.parking import Parking
-from app.db import async_session
 from sqlalchemy import text
+from firebase_admin import credentials, initialize_app
+
+from app.core.config import get_settings
+from app.db import async_session, test_connection
+from app.models.parking import Parking
+from app.routes import bookings
+from app.services.sync import refresh_data           # периодический импорт open-data
+from app.services.user_sync import refresh_user_data # синхронизация профилей
 
 # Настраиваем базовый логгер
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +23,9 @@ app = FastAPI(
     title="Свободные парковки Москвы",
     version="0.2.0",
 )
+
+# Подключаем все роутеры
+app.include_router(bookings.router)
 
 # Разрешаем все CORS-запросы (можно ограничить в будущем)
 app.add_middleware(
