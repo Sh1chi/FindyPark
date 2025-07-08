@@ -6,12 +6,15 @@
     android:fitsSystemWindows="true">
 
     <!-- Карта занимает весь экран -->
+
     <com.yandex.mapkit.mapview.MapView
         android:id="@+id/mapview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent" >
+    </com.yandex.mapkit.mapview.MapView>
 
-    <!-- Левая верхняя кнопка -->
+    <!-- Меню -->
+
     <ImageButton
         android:id="@+id/menuButton"
         android:layout_width="40dp"
@@ -22,7 +25,8 @@
         android:contentDescription="Меню"
         android:layout_gravity="top|start" />
 
-    <!-- Правая верхняя кнопка -->
+    <!-- Поиск -->
+
     <ImageButton
         android:id="@+id/findButton"
         android:layout_width="40dp"
@@ -33,14 +37,58 @@
         android:contentDescription="Найти"
         android:layout_gravity="top|end" />
 
-    <!-- Правая нижняя кнопка -->
+    <!-- Ассистент -->
+
     <ImageButton
         android:id="@+id/helpButton"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_margin="30dp"
+        android:layout_marginEnd="26dp"
+        android:layout_marginBottom="30dp"
         android:background="@drawable/rounded_ripple_bot"
         android:src="@drawable/ic_bot"
         android:contentDescription="Помощь"
         android:layout_gravity="bottom|end" />
+
+    <!-- Кнопки увеличения и уменьшения масштаба -->
+
+    <LinearLayout
+        android:id="@+id/zoomControls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|end"
+        android:orientation="vertical"
+        android:layout_marginEnd="30dp">
+
+        <ImageButton
+            android:id="@+id/plusButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/rounded_ripple"
+            android:contentDescription="Увеличить масштаб"
+            android:src="@drawable/ic_plus" />
+
+        <ImageButton
+            android:id="@+id/minButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/rounded_ripple"
+            android:contentDescription="Уменьшить масштаб"
+            android:src="@drawable/ic_min"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+    <!-- Кнопка моей геопозиции -->
+
+    <ImageButton
+        android:id="@+id/posButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="100dp"
+        android:background="@drawable/rounded_ripple"
+        android:src="@drawable/ic_pos"
+        android:contentDescription="Показать, где я"
+        android:layout_gravity="bottom|end" />
+
 </FrameLayout>

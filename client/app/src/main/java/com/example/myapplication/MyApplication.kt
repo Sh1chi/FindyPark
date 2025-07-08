@@ -12,6 +12,7 @@ class MyApplication : Application() {
         // Инициализация Yandex MapKit
         MapKitFactory.setApiKey("4b8cdf43-eedc-4ebe-abc2-650f0e379413")
         MapKitFactory.initialize(this)
+
     }
 }
 

@@ -1,16 +1,22 @@
 package com.example.myapplication
 
 import ClusterView
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.util.Log.d
+import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -35,18 +41,21 @@ import com.yandex.mapkit.map.ClusterizedPlacemarkCollection
 import com.yandex.mapkit.map.Map
 import kotlinx.coroutines.GlobalScope
 import androidx.activity.viewModels
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.yandex.mapkit.UserData
+import com.yandex.mapkit.layers.ObjectEvent
 import com.yandex.mapkit.map.ClusterTapListener
 import com.yandex.mapkit.map.MapObjectCollection
+import com.yandex.mapkit.user_location.UserLocationLayer
+import com.yandex.mapkit.user_location.UserLocationObjectListener
+import com.yandex.mapkit.user_location.UserLocationView
 import kotlinx.coroutines.isActive
 import okhttp3.*
 
 
-// Объявляем глобальные переменные для карты и бокового меню
+// Объявляем глобальные переменные для карты
 
 lateinit var auth: FirebaseAuth // Добавлено для Firebase Auth
-//private val viewModel: MapViewModel by viewModels()
-var clusterizedCollection: ClusterizedPlacemarkCollection? = null
 private const val CLUSTER_RADIUS = 100.0
 private const val MIN_ZOOM = 15
 
@@ -55,13 +64,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mapView: MapView
     private lateinit var collection: MapObjectCollection
     private lateinit var clasterizedCollection: ClusterizedPlacemarkCollection
+    private lateinit var userLocationLayer: UserLocationLayer
 
     fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
         Toast.makeText(this, message, duration).show()
     }
 
     // Обработчик нажатия по метке на карте
-    private val placemarkTapListener = MapObjectTapListener { _, point ->
+    private val placemarkTapListener = MapObjectTapListener { mapObject, point ->
         mapView.mapWindow.map.move(
             CameraPosition(
                 point,
@@ -72,7 +82,7 @@ class MainActivity : AppCompatActivity() {
             null
         )
         showToast("Tapped the point (${point.longitude}, ${point.latitude})")
-        true // возвращаем true, чтобы событие не передавалось дальше
+        true
     }
 
     private val clusterListener = ClusterListener { cluster ->
@@ -103,6 +113,16 @@ class MainActivity : AppCompatActivity() {
         true
     }
 
+    private val locationPermissionRequest =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                showUserLocation()
+            } else {
+                Toast.makeText(this, "Разрешение на геопозицию не получено", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+
     //////////////////////////////////////////////
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -131,6 +151,29 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
+        locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+
+//        userLocationLayer.setObjectListener(object : UserLocationObjectListener {
+//            override fun onObjectAdded(userLocationView: UserLocationView) {
+//                // Меняем иконку стрелки (движение)
+//                userLocationView.arrow.setIcon(
+//                    ImageProvider.fromResource(this@MainActivity, R.drawable.ic_plus)
+//                )
+//
+//                // Меняем иконку метки (центр)
+//                userLocationView.pin.setIcon(
+//                    ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
+//                )
+//
+//                // Меняем стиль круга точности
+//                userLocationView.accuracyCircle.fillColor = Color.argb(100, 0, 100, 255)
+//            }
+//
+//            override fun onObjectUpdated(view: UserLocationView, event: ObjectEvent) {}
+//            override fun onObjectRemoved(view: UserLocationView) {}
+//        })
+
+
         collection = map.mapObjects.addCollection()
 
         clasterizedCollection = collection.addClusterizedPlacemarkCollection(clusterListener)
@@ -150,16 +193,6 @@ class MainActivity : AppCompatActivity() {
             ParkingSpot(5, "Парковка e", 55.70, 37.62, 10, 1),
             ParkingSpot(6, "Парковка f", 55.77, 37.63, 10, 2)
         )
-
-        // Для примера
-//        val points = listOf(
-//            Point(55.75, 37.62),
-//            Point(55.76, 37.63),
-//            Point(55.80, 37.62),
-//            Point(55.90, 37.63),
-//            Point(55.70, 37.62),
-//            Point(55.77, 37.63)
-//        )
 
         val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pin)
 
@@ -183,61 +216,51 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, MenuActivity::class.java)
             startActivity(intent)
         }
-//        // Обработка выбора пунктов меню
-//        navigationView.setNavigationItemSelectedListener { menuItem ->
-//            when (menuItem.itemId) {
-//                R.id.nav_parking -> {
-//                    Toast.makeText(this, "Парковки", Toast.LENGTH_SHORT).show()
-//                    // переходим в активность парковок
-//                    val intent = Intent(this, ParkingsActivity::class.java)
-//                    startActivity(intent)
-//                }
-//
-//                R.id.nav_settings -> {
-//                    Toast.makeText(this, "Настройки", Toast.LENGTH_SHORT).show()
-//                    // переходим в настройки
-//                    val intent = Intent(this, SettingsActivity::class.java)
-//                    startActivity(intent)
-//                }
-//
-//                R.id.nav_about -> {
-//                    Toast.makeText(this, "О приложении", Toast.LENGTH_SHORT).show()
-//                    // Переходим в о приложении
-//                    val intent = Intent(this, AboutActivity::class.java)
-//                    startActivity(intent)
-//                }
-//                // Добавлен пункт выхода
-//                R.id.nav_logout -> { // Добавленный пункт
-//                    auth.signOut()
-//                    startActivity(Intent(this, RegistrationActivity::class.java))
-//                    finish()
-//                }
-//            }
-//            drawerLayout.closeDrawer(GravityCompat.START) // закрываем меню после выбора
-//            true
-//        }
 
-        // Получаем header (шапку) меню и кнопку в нём
-//        val navigationView = findViewById<NavigationView>(R.id.navigationView)
-//        val header = navigationView.inflateHeaderView(R.layout.nav_header)
-//
-//
-//        // Обработка нажатия на кнопку в хедере (например, "Войти/зарегистрироваться")
-//        val headerButton = header.findViewById<Button>(R.id.headerButton)
-//        // Обновляем кнопку в зависимости от статуса авторизации
-//        if (auth.currentUser != null) {
-//            headerButton.text = "Выйти (${auth.currentUser?.email})"
-//            headerButton.setOnClickListener {
-//                auth.signOut()
-//                startActivity(Intent(this, RegistrationActivity::class.java))
-//                finish()
-//            }
-//        } else {
-//            headerButton.text = "Войти/Регистрация"
-//            headerButton.setOnClickListener {
-//                startActivity(Intent(this, RegistrationActivity::class.java))
-//            }
-//        }
+        val plusButton = findViewById<ImageButton>(R.id.plusButton)
+        plusButton.setOnClickListener {
+            val currPos = mapView.mapWindow.map.cameraPosition
+            mapView.mapWindow.map.move(
+                CameraPosition(
+                    currPos.target,
+                    currPos.zoom + 1,
+                    currPos.azimuth,
+                    currPos.tilt
+                ),
+                Animation(Animation.Type.SMOOTH, 0.3f),
+                null
+            )
+        }
+
+        val minButton = findViewById<ImageButton>(R.id.minButton)
+        minButton.setOnClickListener {
+            val currPos = mapView.mapWindow.map.cameraPosition
+            mapView.mapWindow.map.move(
+                CameraPosition(
+                    currPos.target,
+                    currPos.zoom - 1,
+                    currPos.azimuth,
+                    currPos.tilt
+                ),
+                Animation(Animation.Type.SMOOTH, 0.3f),
+                null
+            )
+        }
+
+        val posButton = findViewById<ImageButton>(R.id.posButton)
+        posButton.setOnClickListener {
+            val userLocationView = userLocationLayer.cameraPosition()
+            if (userLocationView != null) {
+                val target = userLocationView
+                mapView.mapWindow.map.move(
+                    CameraPosition(target.target, 14.0f, 0.0f, 0.0f),
+                    Animation(Animation.Type.SMOOTH, 1f),
+                    null
+                )
+            } else {
+                Toast.makeText(this, "Геопозиция не определена", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     // Активируем карту при старте активности
@@ -268,4 +291,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    fun showUserLocation(){
+        val mapKit = MapKitFactory.getInstance()
+        userLocationLayer = mapKit.createUserLocationLayer(mapView.mapWindow)
+        userLocationLayer.isVisible = true
+    }
+
 }
