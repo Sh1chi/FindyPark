@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
         )
 
 
-            botButton = findViewById(R.id.botButton)
+            botButton = findViewById(R.id.helpButton)
             botButton.setOnClickListener {
                 val assistantDialog = AssistantDialog()
                 assistantDialog.show(supportFragmentManager, "assistant_dialog")
