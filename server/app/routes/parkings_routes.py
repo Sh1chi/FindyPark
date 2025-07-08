@@ -4,7 +4,7 @@ from sqlalchemy import text
 from app.db import async_session
 from app.schemas.parking_schema import Parking
 
-router = APIRouter(prefix="/parkings")
+router = APIRouter(prefix="/parkings", tags=["parkings"])
 
 @router.get("", response_model=list[Parking])
 async def get_parkings():

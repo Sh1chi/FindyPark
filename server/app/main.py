@@ -23,8 +23,8 @@ app = FastAPI(
 )
 
 # Подключаем все роутеры
-app.include_router(parkings.router)
-app.include_router(bookings.router)
+app.include_router(parkings_routes.router)
+app.include_router(bookings_routes.router)
 
 # Разрешаем все CORS-запросы (можно ограничить в будущем)
 app.add_middleware(
