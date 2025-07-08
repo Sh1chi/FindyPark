@@ -1,11 +1,12 @@
 import asyncio
 import logging
-from typing import List, Set
 
+from typing import List, Set
 from firebase_admin import auth
 from sqlalchemy import text, bindparam
+
 from app.db import async_session
-from app.models.enums import UserRole, VehicleKind
+from app.models.enums import UserRole
 
 log = logging.getLogger(__name__)
 POLL_INTERVAL = 60 * 60
@@ -27,6 +28,12 @@ def _map_user(record: auth.UserRecord) -> dict:
 
 
 async def _upsert_users(batch: List[dict]) -> None:
+    """
+    Обновляет или вставляет пользователей из Firebase.
+
+    Использует INSERT ... ON CONFLICT (user_uid) DO UPDATE
+    для массового обновления/добавления.
+    """
     async with async_session() as ses:
         for u in batch:
             await ses.execute(text("""
@@ -79,7 +86,7 @@ async def refresh_user_data() -> None:
     """
     Периодически синхронизирует пользователей с Firebase:
     1) upsert новых/изменённых,
-    2) удаляет отсутствующих.
+    2) Удаляет тех, кого больше нет (и их брони).
     """
     while True:
         try:

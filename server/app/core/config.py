@@ -5,8 +5,14 @@ class Settings(BaseSettings):
     """
     Конфигурация приложения, загружаемая из переменных окружения.
 
-    Attributes:
-        data_mos_token (str): API-ключ для доступа к data.mos.ru.
+    Атрибуты:
+        data_mos_token (str | None): API-ключ data.mos.ru (может быть не задан).
+        postgres_user (str): Логин PostgreSQL.
+        postgres_password (str): Пароль PostgreSQL.
+        postgres_host (str): Хост PostgreSQL (по умолчанию localhost).
+        postgres_port (int): Порт PostgreSQL (по умолчанию 5432).
+        postgres_db (str): Название базы данных.
+        firebase_credentials_path (str): Путь к JSON-файлу Firebase Admin SDK.
     """
     data_mos_token: str  | None = None     # имя переменной из .env
 
@@ -25,11 +31,15 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:  # ← строка подключения
+        """
+        Формирует строку подключения к PostgreSQL (asyncpg-формат).
+        """
         return (
             "postgresql+asyncpg://"
             f"{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
 
 @lru_cache
 def get_settings() -> Settings:

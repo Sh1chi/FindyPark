@@ -1,13 +1,13 @@
 import asyncio
 import logging
 import traceback
-from typing import List, Optional
-
 import httpx
+
+from typing import List, Optional
 from sqlalchemy import text
 
 from app.core.config import get_settings
-from app.models.parking import Parking
+from app.schemas.parking_schema import Parking
 from app.db import async_session
 
 DATASET_ID = 623
@@ -20,7 +20,7 @@ RETRY_DELAY = 15         # Задержка между попытками (се�
 
 # Просто переключатель: в тестах True, в проде — False
 IS_TEST = True
-MAX_TOTAL = 10      # Лимит получаемых записей для теста
+MAX_TOTAL = 100      # Лимит получаемых записей для теста
 
 log      = logging.getLogger(__name__)
 settings = get_settings()
@@ -154,18 +154,18 @@ async def _fetch_all() -> List[Parking]:
 
 async def _fetch_limited() -> List[Parking]:
     """
-    Единственный запрос, возвращает первые 10 записей — только для тестов.
+    Единственный запрос, возвращает первые MAX_TOTAL записей — только для тестов.
     """
     results: List[Parking] = []
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
         batch = await _safe_get(client, {
-            "$top":    10,
+            "$top":    MAX_TOTAL,
             "$skip":   0,
             "api_key": settings.data_mos_token,
         })
         if not batch:
             return results
-        for row in batch[:10]:
+        for row in batch[:MAX_TOTAL]:
             if p := _map_row(row):
                 results.append(p)
     log.info("Fetched %s parking rows (test)", len(results))
