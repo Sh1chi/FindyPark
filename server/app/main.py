@@ -26,6 +26,9 @@ app = FastAPI(
     version="0.2.0",
 )
 
+# Подключаем только роутер ассистента
+app.include_router(assistant.router, prefix="/assistant", tags=["Assistant"])
+
 # Разрешаем все CORS-запросы (можно ограничить в будущем)
 app.add_middleware(
     CORSMiddleware,
@@ -37,64 +40,63 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def on_startup():
-    await test_connection()  # проверяем и логируем
-    asyncio.create_task(refresh_data())
+    logging.info("Assistant service started")
+#    await test_connection()  # проверяем и логируем
+#    asyncio.create_task(refresh_data())
 
     # Инициализируем Firebase Admin SDK
-    cred = credentials.Certificate(settings.firebase_credentials_path)
-    initialize_app(cred)
+#    cred = credentials.Certificate(settings.firebase_credentials_path)
+#    initialize_app(cred)
 
     # Запускаем фоновые синхронизациии
-    asyncio.create_task(refresh_user_data())
+#    asyncio.create_task(refresh_user_data())
 
-    """
-    Обработчик события запуска приложения.
+#    """
+#    Обработчик события запуска приложения.
 
-    Инициализирует контейнер для парковок и запускает фоновую
-    задачу по периодической синхронизации данных.
-    """
-    #app.state.parkings = []   # Хранилище данных о парковках в памяти приложения
-    #asyncio.create_task(refresh_data(app.state)) # Запуск фоновой синхронизации
+#    Инициализирует контейнер для парковок и запускает фоновую
+#    задачу по периодической синхронизации данных.
+#    """
+#    #app.state.parkings = []   # Хранилище данных о парковках в памяти приложения
+#    #asyncio.create_task(refresh_data(app.state)) # Запуск фоновой синхронизации
 
 
-@app.get("/parkings", response_model=list[Parking])
-async def get_parkings():
-    """
-        Чтение актуальных парковок из БД.
-    """
-    async with async_session() as session:
-        result = await session.execute(text("""
-                                                SELECT
-                                                  id,
-                                                  parking_zone_number,
-                                                  name,
-                                                  address,
-                                                  adm_area,
-                                                  district,
-                                                  ST_Y(geom::geometry) AS lat,
-                                                  ST_X(geom::geometry) AS lon,
-                                                  capacity,
-                                                  capacity_disabled,
-                                                  available_spaces AS free_spaces
-                                                FROM parkings
-                                            """))
-        rows = result.all()
-
-    return [
-        Parking(
-            id=row.id,
-            parking_zone_number=row.parking_zone_number,
-            name=row.name,
-            address=row.address,
-            adm_area=row.adm_area,
-            district=row.district,
-            lat=row.lat,
-            lon=row.lon,
-            capacity=row.capacity,
-            capacity_disabled=row.capacity_disabled,
-            free_spaces=row.free_spaces,
-        )
-        for row in rows
-    ]
-# Подключаем только роутер ассистента
-app.include_router(assistant.router, prefix="/assistant", tags=["Assistant"])
+#@app.get("/parkings", response_model=list[Parking])
+#async def get_parkings():
+#    """
+#        Чтение актуальных парковок из БД.
+#    """
+#    async with async_session() as session:
+#        result = await session.execute(text("""
+#                                                SELECT
+#                                                  id,
+#                                                  parking_zone_number,
+#                                                  name,
+#                                                  address,
+#                                                  adm_area,
+#                                                  district,
+#                                                 ST_Y(geom::geometry) AS lat,
+#                                                  ST_X(geom::geometry) AS lon,
+#                                                  capacity,
+#                                                  capacity_disabled,
+#                                                  available_spaces AS free_spaces
+#                                                FROM parkings
+#                                            """))
+#        rows = result.all()
+#
+#    return [
+#        Parking(
+#            id=row.id,
+#            parking_zone_number=row.parking_zone_number,
+#            name=row.name,
+#            address=row.address,
+#            adm_area=row.adm_area,
+#            district=row.district,
+#            lat=row.lat,
+#            lon=row.lon,
+#            capacity=row.capacity,
+#            capacity_disabled=row.capacity_disabled,
+#            free_spaces=row.free_spaces,
+#        )
+#        for row in rows
+#    ]

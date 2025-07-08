@@ -6,10 +6,16 @@ from app.core.config import get_settings
 
 log = logging.getLogger("assistant")
 
+
 class GigaChatAssistant:
-    def __init__(self):
+    def __init__(self, system_prompt: str, max_tokens: int, temperature: float, top_p: float):
         settings = get_settings()
         self.sber_auth = settings.sber_auth
+        self.system_prompt = system_prompt
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+        self.top_p = top_p
+
         if not self.sber_auth:
             raise RuntimeError("SBER_AUTH not configured")
 
@@ -33,13 +39,35 @@ class GigaChatAssistant:
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {token}'
         }
+
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": question}
+        ]
+
         payload = json.dumps({
             "model": "GigaChat",
-            "messages": [{"role": "user", "content": question}],
-            "temperature": 1,
-            "max_tokens": 512
+            "messages": messages,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_p": self.top_p
         })
 
-        response = requests.post(url, headers=headers, data=payload, verify=False, timeout=15)
-        response.raise_for_status()
-        return response.json()['choices'][0]['message']['content']
+        try:
+            response = requests.post(url, headers=headers, data=payload, verify=False, timeout=15)
+            response.raise_for_status()
+            response_data = response.json()
+
+            # Проверка наличия ожидаемой структуры ответа
+            if 'choices' not in response_data or not response_data['choices']:
+                log.error("Invalid response structure from GigaChat API")
+                return "Не удалось обработать ответ сервиса"
+
+            return response_data['choices'][0]['message']['content']
+
+        except requests.exceptions.RequestException as e:
+            log.error(f"GigaChat API request failed: {str(e)}")
+            return "Ошибка соединения с сервисом"
+        except json.JSONDecodeError:
+            log.error("Failed to parse GigaChat API response")
+            return "Ошибка обработки ответа сервиса"

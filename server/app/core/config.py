@@ -24,6 +24,21 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
+    sber_auth: str  # Ключ для GigaChat API
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore"
+    )
+
+    @property
+    def database_url(self) -> str:
+        return (
+                "postgresql+asyncpg://"
+                f"{self.postgres_user}:{self.postgres_password}"
+                f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+
+        )
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
