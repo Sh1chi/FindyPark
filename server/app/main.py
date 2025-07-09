@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, initialize_app
 
 from app.core.config import get_settings
+from app.routers import assistant  # Импорт роутера ассистента
+
 from app.db import test_connection
 from app.routes import parkings_routes, bookings_routes
 from app.services.parking_service import refresh_data       # периодический импорт open-data
@@ -25,6 +27,9 @@ app = FastAPI(
 # Подключаем все роутеры
 app.include_router(parkings_routes.router)
 app.include_router(bookings_routes.router)
+
+# Подключаем только роутер ассистента
+app.include_router(assistant.router, prefix="/assistant", tags=["Assistant"])
 
 # Разрешаем все CORS-запросы (можно ограничить в будущем)
 app.add_middleware(

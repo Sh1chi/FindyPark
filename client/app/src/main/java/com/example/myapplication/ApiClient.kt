@@ -10,6 +10,7 @@ object ApiClient {
     // в cmd своего компа. После этого в переменных средах, в Path добавьте путь
     // C:\Users\ИМЯ ПОЛЬЗОВАТЕЛЯ\AppData\Local\Android\Sdk\platform-tools
     // Затем здесь поменяйте адрес на http://127.0.0.1:8000/
+    // uvicorn app.main:app --reload
 
     val parkingApi: ParkingApi by lazy {
         Retrofit.Builder()

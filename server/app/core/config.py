@@ -29,6 +29,8 @@ class Settings(BaseSettings):
         extra="ignore"      # Игнорируем переменные, не описанные в модели
     )
 
+    sber_auth: str  # Ключ для GigaChat API
+
     @property
     def database_url(self) -> str:  # ← строка подключения
         """
