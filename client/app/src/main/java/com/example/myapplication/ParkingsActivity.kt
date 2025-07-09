@@ -38,15 +38,15 @@ class ParkingsActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                //val parkings = ParkingRepository.getParkings()
-                val parkings = listOf(
-                    ParkingSpot(1, "Парковка A", 55.75, 37.62, 10, 1),
-                    ParkingSpot(2, "Парковка B", 55.76, 37.63, 10, 2),
-                    ParkingSpot(3, "Парковка c", 55.80, 37.62, 10, 1),
-                    ParkingSpot(4, "Парковка d", 55.90, 37.63, 10, 2),
-                    ParkingSpot(5, "Парковка e", 55.70, 37.62, 10, 1),
-                    ParkingSpot(6, "Парковка f", 55.77, 37.63, 10, 2)
-                )
+                val parkings = ParkingRepository.getParkings()
+//                val parkings = listOf(
+//                    ParkingSpot(1, "Парковка A", 55.75, 37.62, 10, 1),
+//                    ParkingSpot(2, "Парковка B", 55.76, 37.63, 10, 2),
+//                    ParkingSpot(3, "Парковка c", 55.80, 37.62, 10, 1),
+//                    ParkingSpot(4, "Парковка d", 55.90, 37.63, 10, 2),
+//                    ParkingSpot(5, "Парковка e", 55.70, 37.62, 10, 1),
+//                    ParkingSpot(6, "Парковка f", 55.77, 37.63, 10, 2)
+//                )
                 adapter = ParkingAdapter(parkings) { spot ->
                     Toast.makeText(this@ParkingsActivity, "Выбрана: ${spot.name}",
                         Toast.LENGTH_SHORT).show()
