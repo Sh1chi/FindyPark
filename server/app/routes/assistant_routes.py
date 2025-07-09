@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.services.assistant import GigaChatAssistant
+from app.services.assistant_service import GigaChatAssistant
 
-router = APIRouter()
+router = APIRouter(prefix="/assistant", tags=["Assistant"])
 
 # Конфигурация с промтом и параметрами генерации
 SYSTEM_CONFIG = {
