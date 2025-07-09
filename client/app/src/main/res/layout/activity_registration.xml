@@ -6,6 +6,7 @@
     android:orientation="vertical"
     android:padding="16dp"
     android:background="@android:color/white"
+    android:fitsSystemWindows="true"
     tools:context=".RegistrationActivity">
 
     <!-- Заголовок -->

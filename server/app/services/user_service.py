@@ -1,11 +1,12 @@
 import asyncio
 import logging
-from typing import List, Set
 
+from typing import List, Set
 from firebase_admin import auth
 from sqlalchemy import text, bindparam
+
 from app.db import async_session
-from app.models.enums import UserRole, VehicleKind
+from app.models.enums import UserRole
 
 log = logging.getLogger(__name__)
 POLL_INTERVAL = 60 * 60
@@ -27,6 +28,12 @@ def _map_user(record: auth.UserRecord) -> dict:
 
 
 async def _upsert_users(batch: List[dict]) -> None:
+    """
+    Обновляет или вставляет пользователей из Firebase.
+
+    Использует INSERT ... ON CONFLICT (user_uid) DO UPDATE
+    для массового обновления/добавления.
+    """
     async with async_session() as ses:
         for u in batch:
             await ses.execute(text("""
@@ -45,26 +52,41 @@ async def _upsert_users(batch: List[dict]) -> None:
 
 async def _delete_missing(uids_in_fb: Set[str]) -> None:
     """
-    Удаляем из БД тех, кого уже нет в Firebase.
+    Удаляем из БД тех пользователей, которых уже нет в Firebase,
+    вместе со всеми их бронированиями.
     """
     if not uids_in_fb:
         return
+
     async with async_session() as ses:
+        # 1) Сначала очищаем брони пользователей, которых больше нет в Firebase
+        await ses.execute(
+            text("""
+                DELETE FROM bookings
+                 WHERE user_uid NOT IN :uids
+            """).bindparams(bindparam("uids", expanding=True)),
+            {"uids": list(uids_in_fb)},
+        )
+
+        # 2) Затем удаляем самих пользователей
         result = await ses.execute(
-            text("DELETE FROM users WHERE user_uid NOT IN :uids")
-            .bindparams(bindparam("uids", expanding=True)),
+            text("""
+                DELETE FROM users
+                 WHERE user_uid NOT IN :uids
+            """).bindparams(bindparam("uids", expanding=True)),
             {"uids": list(uids_in_fb)},
         )
         deleted = result.rowcount
+
         await ses.commit()
-        log.info("Deleted %d users not present in Firebase", deleted)
+        log.info("Deleted %d users (and their bookings) not present in Firebase", deleted)
 
 
 async def refresh_user_data() -> None:
     """
     Периодически синхронизирует пользователей с Firebase:
     1) upsert новых/изменённых,
-    2) удаляет отсутствующих.
+    2) Удаляет тех, кого больше нет (и их брони).
     """
     while True:
         try:
