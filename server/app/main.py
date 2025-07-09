@@ -7,7 +7,7 @@ from firebase_admin import credentials, initialize_app
 
 from app.core.config import get_settings
 from app.db import test_connection
-from app.routes import parkings_routes, bookings_routes, assistant_routes
+from app.routes import parkings_routes, bookings_routes, assistant_routes, reviews_routes
 from app.services.parking_service import refresh_data       # периодический импорт open-data
 from app.services.user_service import refresh_user_data     # синхронизация профилей
 
@@ -25,6 +25,7 @@ app = FastAPI(
 # Подключаем все роутеры
 app.include_router(parkings_routes.router)
 app.include_router(bookings_routes.router)
+app.include_router(reviews_routes.router)
 app.include_router(assistant_routes.router)
 
 # Разрешаем все CORS-запросы (можно ограничить в будущем)
