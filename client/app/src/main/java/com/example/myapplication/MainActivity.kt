@@ -46,6 +46,7 @@ import com.yandex.mapkit.UserData
 import com.yandex.mapkit.layers.ObjectEvent
 import com.yandex.mapkit.map.ClusterTapListener
 import com.yandex.mapkit.map.MapObjectCollection
+import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
@@ -65,13 +66,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var collection: MapObjectCollection
     private lateinit var clasterizedCollection: ClusterizedPlacemarkCollection
     private lateinit var userLocationLayer: UserLocationLayer
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<LinearLayout>
+    private lateinit var parkingTitle: TextView
+    private lateinit var parkingAddress: TextView
+    private lateinit var parkingDetails: TextView
 
     fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
         Toast.makeText(this, message, duration).show()
     }
-
-    // Кнопка бота
-    private lateinit var botButton: ImageButton
 
     // Обработчик нажатия по метке на карте
     private val placemarkTapListener = MapObjectTapListener { mapObject, point ->
@@ -84,10 +86,20 @@ class MainActivity : AppCompatActivity() {
             Animation(Animation.Type.SMOOTH, 0.5f),
             null
         )
+        if (mapObject is PlacemarkMapObject) {
+            val parking = mapObject.userData as? ParkingSpot
+            parking?.let {
+                parkingTitle.text = it.name
+                parkingAddress.text = it.address
+                parkingDetails.text = it.parking_zone_number
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
         showToast("Tapped the point (${point.longitude}, ${point.latitude})")
         true
     }
 
+    // ClusterListener
     private val clusterListener = ClusterListener { cluster ->
         cluster.appearance.setView(
             ViewProvider(
@@ -101,12 +113,13 @@ class MainActivity : AppCompatActivity() {
         cluster.addClusterTapListener(clusterTapListener)
     }
 
+    // Обработчик нажатия по кластеру на карте
     private val clusterTapListener = ClusterTapListener { tappedCluster ->
         val target = tappedCluster.appearance.geometry
         mapView.mapWindow.map.move(
             CameraPosition(
                 target,
-                mapView.mapWindow.map.cameraPosition.zoom + 2,
+                mapView.mapWindow.map.cameraPosition.zoom + 1,
                 0f, 0f
             ),
             Animation(Animation.Type.SMOOTH, 0.5f),
@@ -121,10 +134,9 @@ class MainActivity : AppCompatActivity() {
             if (granted) {
                 showUserLocation()
             } else {
-                Toast.makeText(this, "Разрешение на геопозицию не получено", Toast.LENGTH_SHORT).show()
+                showToast("Разрешение на геопозицию не получено")
             }
         }
-
 
     //////////////////////////////////////////////
     @SuppressLint("SuspiciousIndentation")
@@ -154,15 +166,35 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
+        val bottomSheet = findViewById<LinearLayout>(R.id.bottom_sheet)
+        if (bottomSheet == null) {
+            Log.e("MainActivity", "Bottom sheet view is null!")
+            return
+        }
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        parkingTitle = findViewById(R.id.parking_title)
+        parkingAddress = findViewById(R.id.parking_address)
+        parkingDetails = findViewById(R.id.parking_details)
 
-            botButton = findViewById(R.id.helpButton)
-            botButton.setOnClickListener {
-                val assistantDialog = AssistantDialog()
-                assistantDialog.show(supportFragmentManager, "assistant_dialog")
+        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                    parkingTitle.animate().alpha(1f).setDuration(200).start()
+                    parkingAddress.animate().alpha(1f).setDuration(200).start()
+                    parkingDetails.animate().alpha(1f).setDuration(200).start()
+                }
             }
 
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                // Плавное изменение прозрачности при смахивании
+                parkingTitle.alpha = slideOffset
+                parkingAddress.alpha = slideOffset
+                parkingDetails.alpha = slideOffset
+            }
+        })
 
-
+        // ЗАПРАШИВАЕМ РАЗРЕШЕНИЕ НА ИСПОЛЬЗОВАНИЕ ГЕОПОЗИЦИИ
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
 
 //        userLocationLayer.setObjectListener(object : UserLocationObjectListener {
@@ -185,44 +217,33 @@ class MainActivity : AppCompatActivity() {
 //            override fun onObjectRemoved(view: UserLocationView) {}
 //        })
 
-
+        // СОЗДАНИЕ КОЛЛЕКЦИИ
         collection = map.mapObjects.addCollection()
 
+        // ДОБАВЛЕНИЕ КЛАСТЕРОВ В КОЛЛЕКЦИИ
         clasterizedCollection = collection.addClusterizedPlacemarkCollection(clusterListener)
 
-
-//        try {
-//            val parkings = ParkingRepository.getParkings()
-//        } catch (e: Exception) {
-//            Toast.makeText(this@MainActivity, "Ошибка загрузки тут: ${e.message}", Toast.LENGTH_LONG).show()
-//        }
-
-        val parkings = listOf(
-            ParkingSpot(1, "Парковка A", 55.75, 37.62, 10, 1),
-            ParkingSpot(2, "Парковка B", 55.76, 37.63, 10, 2),
-            ParkingSpot(3, "Парковка c", 55.80, 37.62, 10, 1),
-            ParkingSpot(4, "Парковка d", 55.90, 37.63, 10, 2),
-            ParkingSpot(5, "Парковка e", 55.70, 37.62, 10, 1),
-            ParkingSpot(6, "Парковка f", 55.77, 37.63, 10, 2)
-        )
-
-        val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pin)
-
-        parkings.forEach { p ->
-
-            clasterizedCollection.addPlacemark(Point(p.lat, p.lon)).apply {
+        // ЗАГРУЗКА ТОЧЕК И КЛАСТЕРОВ НА КАРТЕ
+        lifecycleScope.launch {
+            try{
+                val parkings = ParkingRepository.getParkings()
+                val imageProvider = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
+                parkings.forEach { p ->
+                    clasterizedCollection.addPlacemark(Point(p.lat, p.lon)).apply {
 //                geometry = p
-                setIcon(imageProvider)
-                userData = p
-                addTapListener(placemarkTapListener)
-            }
+                        setIcon(imageProvider)
+                        userData = p
+                        addTapListener(placemarkTapListener)
+                    }
 
+                }
+                clasterizedCollection.clusterPlacemarks(CLUSTER_RADIUS, MIN_ZOOM)
+            }catch (e: Exception){
+                showToast("Ошибка загрузки карты: ${e.localizedMessage}")
+            }
         }
 
-        clasterizedCollection.clusterPlacemarks(CLUSTER_RADIUS, MIN_ZOOM)
-
-
-        // КНОПКИ
+        // ОБРАБОТЧИКИ КНОПОК
         val menuButton = findViewById<ImageButton>(R.id.menuButton)
         menuButton.setOnClickListener {
             val intent = Intent(this, MenuActivity::class.java)
@@ -270,8 +291,14 @@ class MainActivity : AppCompatActivity() {
                     null
                 )
             } else {
-                Toast.makeText(this, "Геопозиция не определена", Toast.LENGTH_SHORT).show()
+                showToast("Геопозиция не определена")
             }
+        }
+
+        val botButton = findViewById<ImageButton>(R.id.helpButton)
+        botButton.setOnClickListener {
+            val assistantDialog = AssistantDialog()
+            assistantDialog.show(supportFragmentManager, "assistant_dialog")
         }
     }
 

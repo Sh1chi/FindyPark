@@ -1,94 +1,281 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/map_container"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true">
+    android:layout_height="match_parent">
 
-    <!-- Карта занимает весь экран -->
-
-    <com.yandex.mapkit.mapview.MapView
-        android:id="@+id/mapview"
+    <FrameLayout
+        android:id="@+id/map_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
-    </com.yandex.mapkit.mapview.MapView>
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true">
 
-    <!-- Меню -->
+        <!-- Карта -->
 
-    <ImageButton
-        android:id="@+id/menuButton"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_margin="30dp"
-        android:background="@drawable/rounded_ripple"
-        android:src="@drawable/ic_menu"
-        android:contentDescription="Меню"
-        android:layout_gravity="top|start" />
+        <com.yandex.mapkit.mapview.MapView
+            android:id="@+id/mapview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-    <!-- Поиск -->
+        <!-- Меню -->
+        <ImageButton
+            android:id="@+id/menuButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="30dp"
+            android:background="@drawable/rounded_ripple"
+            android:src="@drawable/ic_menu"
+            android:contentDescription="Меню"
+            android:layout_gravity="top|start" />
 
-    <ImageButton
-        android:id="@+id/findButton"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_margin="30dp"
-        android:background="@drawable/rounded_ripple"
-        android:src="@drawable/ic_finder"
-        android:contentDescription="Найти"
-        android:layout_gravity="top|end" />
+        <!-- Поиск -->
+        <ImageButton
+            android:id="@+id/findButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="30dp"
+            android:background="@drawable/rounded_ripple"
+            android:src="@drawable/ic_finder"
+            android:contentDescription="Найти"
+            android:layout_gravity="top|end" />
 
-    <!-- Ассистент -->
+        <!-- Ассистент -->
+        <ImageButton
+            android:id="@+id/helpButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="26dp"
+            android:layout_marginBottom="30dp"
+            android:background="@drawable/rounded_ripple_bot"
+            android:src="@drawable/ic_bot"
+            android:contentDescription="Помощь"
+            android:layout_gravity="bottom|end" />
 
-    <ImageButton
-        android:id="@+id/helpButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginEnd="26dp"
-        android:layout_marginBottom="30dp"
-        android:background="@drawable/rounded_ripple_bot"
-        android:src="@drawable/ic_bot"
-        android:contentDescription="Помощь"
-        android:layout_gravity="bottom|end" />
+        <!-- Кнопки увеличения и уменьшения масштаба -->
+        <LinearLayout
+            android:id="@+id/zoomControls"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|end"
+            android:orientation="vertical"
+            android:layout_marginEnd="30dp">
 
-    <!-- Кнопки увеличения и уменьшения масштаба -->
+            <ImageButton
+                android:id="@+id/plusButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/rounded_ripple"
+                android:contentDescription="Увеличить масштаб"
+                android:src="@drawable/ic_plus" />
 
+            <ImageButton
+                android:id="@+id/minButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/rounded_ripple"
+                android:contentDescription="Уменьшить масштаб"
+                android:src="@drawable/ic_min"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- Кнопка моей геопозиции -->
+        <ImageButton
+            android:id="@+id/posButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="100dp"
+            android:background="@drawable/rounded_ripple"
+            android:src="@drawable/ic_pos"
+            android:contentDescription="Показать, где я"
+            android:layout_gravity="bottom|end" />
+    </FrameLayout>
+
+    <!-- Bottom Sheet -->
     <LinearLayout
-        android:id="@+id/zoomControls"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|end"
+        android:id="@+id/bottom_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
         android:orientation="vertical"
-        android:layout_marginEnd="30dp">
+        android:padding="16dp"
+        android:background="@drawable/bottom_sheet_background"
+        android:elevation="8dp"
+        app:behavior_hideable="true"
+        app:behavior_peekHeight="300dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
-        <ImageButton
-            android:id="@+id/plusButton"
+        <!-- Полоса для смахивания -->
+        <View
+            android:id="@+id/drag_handle"
             android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/rounded_ripple"
-            android:contentDescription="Увеличить масштаб"
-            android:src="@drawable/ic_plus" />
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/drag_handle_shape" />
 
-        <ImageButton
-            android:id="@+id/minButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/rounded_ripple"
-            android:contentDescription="Уменьшить масштаб"
-            android:src="@drawable/ic_min"
-            android:layout_marginTop="8dp" />
+        <TextView
+            android:id="@+id/parking_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:text="Название парковки" />
+
+        <TextView
+            android:id="@+id/parking_address"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Адрес парковки" />
+
+        <TextView
+            android:id="@+id/parking_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Дополнительная информация" />
+
+        <Button
+            android:id="@+id/bronButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:background="@color/black"
+            android:contentDescription="Забронировать"
+            android:src="@drawable/ic_pos"
+            android:text="Забронировать" />
     </LinearLayout>
 
-    <!-- Кнопка моей геопозиции -->
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <ImageButton
-        android:id="@+id/posButton"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="30dp"
-        android:layout_marginBottom="100dp"
-        android:background="@drawable/rounded_ripple"
-        android:src="@drawable/ic_pos"
-        android:contentDescription="Показать, где я"
-        android:layout_gravity="bottom|end" />
+    <!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    android:id="@+id/map_container"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    android:fitsSystemWindows="true">-->
 
-</FrameLayout>
+<!--    &lt;!&ndash; Карта занимает весь экран &ndash;&gt;-->
+
+<!--    <com.yandex.mapkit.mapview.MapView-->
+<!--        android:id="@+id/mapview"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent" >-->
+<!--    </com.yandex.mapkit.mapview.MapView>-->
+
+<!--    &lt;!&ndash; Меню &ndash;&gt;-->
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/menuButton"-->
+<!--        android:layout_width="40dp"-->
+<!--        android:layout_height="40dp"-->
+<!--        android:layout_margin="30dp"-->
+<!--        android:background="@drawable/rounded_ripple"-->
+<!--        android:src="@drawable/ic_menu"-->
+<!--        android:contentDescription="Меню"-->
+<!--        android:layout_gravity="top|start" />-->
+
+<!--    &lt;!&ndash; Поиск &ndash;&gt;-->
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/findButton"-->
+<!--        android:layout_width="40dp"-->
+<!--        android:layout_height="40dp"-->
+<!--        android:layout_margin="30dp"-->
+<!--        android:background="@drawable/rounded_ripple"-->
+<!--        android:src="@drawable/ic_finder"-->
+<!--        android:contentDescription="Найти"-->
+<!--        android:layout_gravity="top|end" />-->
+
+<!--    &lt;!&ndash; Ассистент &ndash;&gt;-->
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/helpButton"-->
+<!--        android:layout_width="48dp"-->
+<!--        android:layout_height="48dp"-->
+<!--        android:layout_marginEnd="26dp"-->
+<!--        android:layout_marginBottom="30dp"-->
+<!--        android:background="@drawable/rounded_ripple_bot"-->
+<!--        android:src="@drawable/ic_bot"-->
+<!--        android:contentDescription="Помощь"-->
+<!--        android:layout_gravity="bottom|end" />-->
+
+<!--    &lt;!&ndash; Кнопки увеличения и уменьшения масштаба &ndash;&gt;-->
+
+<!--    <LinearLayout-->
+<!--        android:id="@+id/zoomControls"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_gravity="center_vertical|end"-->
+<!--        android:orientation="vertical"-->
+<!--        android:layout_marginEnd="30dp">-->
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/plusButton"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:background="@drawable/rounded_ripple"-->
+<!--            android:contentDescription="Увеличить масштаб"-->
+<!--            android:src="@drawable/ic_plus" />-->
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/minButton"-->
+<!--            android:layout_width="40dp"-->
+<!--            android:layout_height="40dp"-->
+<!--            android:background="@drawable/rounded_ripple"-->
+<!--            android:contentDescription="Уменьшить масштаб"-->
+<!--            android:src="@drawable/ic_min"-->
+<!--            android:layout_marginTop="8dp" />-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; Кнопка моей геопозиции &ndash;&gt;-->
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/posButton"-->
+<!--        android:layout_width="40dp"-->
+<!--        android:layout_height="40dp"-->
+<!--        android:layout_marginEnd="30dp"-->
+<!--        android:layout_marginBottom="100dp"-->
+<!--        android:background="@drawable/rounded_ripple"-->
+<!--        android:src="@drawable/ic_pos"-->
+<!--        android:contentDescription="Показать, где я"-->
+<!--        android:layout_gravity="bottom|end" />-->
+
+<!--    <LinearLayout-->
+<!--        android:id="@+id/bottom_sheet"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_gravity="bottom"-->
+<!--        android:orientation="vertical"-->
+<!--        android:padding="16dp"-->
+<!--        android:background="@android:color/white"-->
+<!--        app:behavior_peekHeight="0dp"-->
+<!--        app:behavior_hideable="true"-->
+<!--        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/parking_title"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:textSize="18sp"-->
+<!--            android:textStyle="bold"-->
+<!--            android:text="Название парковки" />-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/parking_address"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="8dp"-->
+<!--            android:text="Адрес парковки" />-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/parking_details"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="8dp"-->
+<!--            android:text="Дополнительная информация" />-->
+<!--    </LinearLayout>-->
+
+<!--</FrameLayout>-->
