@@ -1,12 +1,13 @@
 import asyncio
 import logging
+from cgitb import text
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import credentials, initialize_app
 
 from app.core.config import get_settings
-from app.db import test_connection
+from app.db import test_connection, async_session
 from app.routes import parkings_routes, bookings_routes, assistant_routes
 from app.services.parking_service import refresh_data       # периодический импорт open-data
 from app.services.user_service import refresh_user_data     # синхронизация профилей
@@ -53,3 +54,12 @@ async def on_startup():
 
     # Запускаем фоновые синхронизациии
     asyncio.create_task(refresh_user_data())
+
+    @app.get("/debug/user/{uid}")
+    async def debug_user(uid: str):
+        async with async_session() as ses:
+            user = await ses.execute(
+                text("SELECT * FROM users WHERE user_uid = :uid"),
+                {"uid": uid}
+            )
+            return {"exists": bool(user.scalar())}
