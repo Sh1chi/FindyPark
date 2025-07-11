@@ -7,6 +7,7 @@ from sqlalchemy import text, bindparam
 
 from app.db import async_session
 from app.models.enums import UserRole
+from app.schemas.user_schema import UserOut, UserUpdateIn
 
 log = logging.getLogger(__name__)
 POLL_INTERVAL = 60 * 60
@@ -101,3 +102,58 @@ async def refresh_user_data() -> None:
             log.warning("Ошибка синхронизации пользователей: %s", exc, exc_info=True)
 
         await asyncio.sleep(POLL_INTERVAL)
+
+
+async def get_user_profile(user_uid: str) -> UserOut:
+    """
+    Возвращает профиль пользователя по user_uid.
+    """
+    async with async_session() as ses:
+        row = await ses.execute(
+            text("""
+                SELECT user_uid, display_name, email, phone, vehicle_type, plate
+                  FROM users
+                 WHERE user_uid = :uid
+            """),
+            {"uid": user_uid},
+        )
+        record = row.first()
+    return UserOut(**record._mapping)
+
+
+async def update_user_profile(user_uid: str, data: UserUpdateIn) -> UserOut:
+    """
+    Обновляет профиль пользователя по его UID.
+    Пустая строка = очистка поля (NULL), за исключением display_name,
+    которое при очистке становится 'Без имени'.
+    """
+    # Забираем только те поля, которые были реально переданы клиентом
+    raw = data.model_dump(exclude_unset=True)
+
+    # Пустую строку трактуем как NULL, иначе оставляем как есть
+    payload: dict[str, object | None] = {}
+    for k, v in raw.items():
+        if k == "display_name":
+            # '' или None  →  'Без имени'
+            payload[k] = v if (isinstance(v, str) and v.strip()) else "Без имени"
+        else:
+            # для остальных полей '' → NULL
+            payload[k] = None if (isinstance(v, str) and v == "") else v
+
+    if not payload:
+        # Если нечего обновлять — возвращаем текущий профиль без изменений
+        return await get_user_profile(user_uid)
+
+    # Генерируем SET-выражение для SQL запроса
+    set_clause = ", ".join(f"{k} = :{k}" for k in payload.keys())
+    payload["uid"] = user_uid
+
+    async with async_session() as ses:
+        await ses.execute(
+            text(f"UPDATE users SET {set_clause} WHERE user_uid = :uid"),
+            payload,
+        )
+        await ses.commit()
+
+    # Возвращаем обновлённые данные пользователя
+    return await get_user_profile(user_uid)
