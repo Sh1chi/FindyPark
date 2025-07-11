@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 
 from app.schemas.review_schema import ReviewIn, ReviewOut
 from app.services.review_service import create_review, list_reviews
-from app.routes.bookings_routes import get_current_user
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
