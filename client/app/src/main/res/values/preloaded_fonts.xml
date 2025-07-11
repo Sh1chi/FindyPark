@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <array name="preloaded_fonts" translatable="false">
+        <item>@font/alumni_sans_pinstripe</item>
+        <item>@font/prosto_one</item>
         <item>@font/rubik_mono_one</item>
+        <item>@font/russo_one</item>
     </array>
 </resources>
