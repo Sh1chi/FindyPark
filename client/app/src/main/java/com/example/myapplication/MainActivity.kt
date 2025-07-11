@@ -3,9 +3,15 @@ package com.example.myapplication
 import ClusterView
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.icu.text.SimpleDateFormat
+import android.icu.util.Calendar
+import android.icu.util.TimeZone
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -50,8 +56,15 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
+import java.util.Locale
 
 
 // Объявляем глобальные переменные для карты
@@ -67,8 +80,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clasterizedCollection: ClusterizedPlacemarkCollection
     private lateinit var userLocationLayer: UserLocationLayer
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<LinearLayout>
+    private var selectedParkingId: Long? = null
     private lateinit var parkingTitle: TextView
     private lateinit var parkingAddress: TextView
+    private lateinit var parkingCapacity: TextView
+    private lateinit var parkingDisabled: TextView
+    private lateinit var parkingFreeSpaces: TextView
+    private lateinit var parkingTariff: TextView
     private lateinit var parkingDetails: TextView
 
     fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
@@ -86,16 +104,26 @@ class MainActivity : AppCompatActivity() {
             Animation(Animation.Type.SMOOTH, 0.5f),
             null
         )
+
         if (mapObject is PlacemarkMapObject) {
             val parking = mapObject.userData as? ParkingSpot
             parking?.let {
+                selectedParkingId = it.id
                 parkingTitle.text = it.name
                 parkingAddress.text = it.address
+                parkingCapacity.text = "Всего мест: " + it.capacity
+                parkingDisabled.text = "Инвалидных мест: " + it.capacity_disabled
+                parkingFreeSpaces.text = "Свободных мест: " + it.free_spaces
                 parkingDetails.text = it.parking_zone_number
+                parkingTariff.text = "Стоимость в час: 0 руб"
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
+
+            val bookButton = findViewById<Button>(R.id.bookButton)
+            bookButton.setOnClickListener {
+                showDateTimePickerForBooking(selectedParkingId!!)
+            }
         }
-        showToast("Tapped the point (${point.longitude}, ${point.latitude})")
         true
     }
 
@@ -175,24 +203,28 @@ class MainActivity : AppCompatActivity() {
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         parkingTitle = findViewById(R.id.parking_title)
         parkingAddress = findViewById(R.id.parking_address)
+        parkingCapacity = findViewById(R.id.parking_capacity)
+        parkingDisabled = findViewById(R.id.parking_disabled)
+        parkingFreeSpaces = findViewById(R.id.parking_free_spaces)
+        parkingTariff = findViewById(R.id.parking_tariff)
         parkingDetails = findViewById(R.id.parking_details)
 
-        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-            override fun onStateChanged(bottomSheet: View, newState: Int) {
-                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                    parkingTitle.animate().alpha(1f).setDuration(200).start()
-                    parkingAddress.animate().alpha(1f).setDuration(200).start()
-                    parkingDetails.animate().alpha(1f).setDuration(200).start()
-                }
-            }
-
-            override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                // Плавное изменение прозрачности при смахивании
-                parkingTitle.alpha = slideOffset
-                parkingAddress.alpha = slideOffset
-                parkingDetails.alpha = slideOffset
-            }
-        })
+//        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+//            override fun onStateChanged(bottomSheet: View, newState: Int) {
+//                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+//                    parkingTitle.animate().alpha(1f).setDuration(200).start()
+//                    parkingAddress.animate().alpha(1f).setDuration(200).start()
+//                    parkingDetails.animate().alpha(1f).setDuration(200).start()
+//                }
+//            }
+//
+//            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+//                // Плавное изменение прозрачности при смахивании
+//                parkingTitle.alpha = slideOffset
+//                parkingAddress.alpha = slideOffset
+//                parkingDetails.alpha = slideOffset
+//            }
+//        })
 
         // ЗАПРАШИВАЕМ РАЗРЕШЕНИЕ НА ИСПОЛЬЗОВАНИЕ ГЕОПОЗИЦИИ
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -230,7 +262,6 @@ class MainActivity : AppCompatActivity() {
                 val imageProvider = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
                 parkings.forEach { p ->
                     clasterizedCollection.addPlacemark(Point(p.lat, p.lon)).apply {
-//                geometry = p
                         setIcon(imageProvider)
                         userData = p
                         addTapListener(placemarkTapListener)
@@ -337,4 +368,119 @@ class MainActivity : AppCompatActivity() {
         userLocationLayer.isVisible = true
     }
 
+    private fun showDateTimePickerForBooking(id: Long) {
+        val calendar = Calendar.getInstance()
+        val now = Calendar.getInstance()
+
+        // Выбор даты начала
+        val startDatePicker = DatePickerDialog(this, { _, year, month, day ->
+            calendar.set(year, month, day)
+
+            // Время начала
+            TimePickerDialog(this, { _, hour, minute ->
+                calendar.set(Calendar.HOUR_OF_DAY, hour)
+                calendar.set(Calendar.MINUTE, minute)
+
+                val tsFrom = calendar.clone() as Calendar
+
+                // Проверка: нельзя раньше текущего момента
+                if (tsFrom.before(now)) {
+                    showToast("Нельзя выбрать время в прошлом")
+                    return@TimePickerDialog
+                }
+
+                // Дата окончания
+                val endDatePicker = DatePickerDialog(this, { _, endYear, endMonth, endDay ->
+                    calendar.set(endYear, endMonth, endDay)
+
+                    // Время окончания
+                    TimePickerDialog(this, { _, endHour, endMinute ->
+                        calendar.set(Calendar.HOUR_OF_DAY, endHour)
+                        calendar.set(Calendar.MINUTE, endMinute)
+
+                        val tsTo = calendar.clone() as Calendar
+
+                        // Проверка: окончание должно быть позже начала
+                        if (tsTo <= tsFrom) {
+                            showToast("Время окончания должно быть позже начала")
+                            return@TimePickerDialog
+                        }
+
+                        // Формат ISO
+                        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+                        formatter.timeZone = TimeZone.getDefault()
+
+                        val tsFromStr = formatter.format(tsFrom.time)
+                        val tsToStr = formatter.format(tsTo.time)
+
+                        sendBooking(id, tsFromStr, tsToStr)
+
+                    }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
+
+                }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+
+                // Ограничим выбор даты окончания (не раньше текущей даты)
+                endDatePicker.datePicker.minDate = calendar.timeInMillis
+                endDatePicker.show()
+
+            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
+
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+
+        // Ограничим выбор даты начала - не раньше текущей даты
+        startDatePicker.datePicker.minDate = now.timeInMillis
+        startDatePicker.show()
+
+    }
+
+    private fun sendBooking(id:Long, startDateTime: String, endDateTime: String) {
+        lifecycleScope.launch {
+            val user = Firebase.auth.currentUser
+            if (user == null) {
+                showToast("Сначала войдите в приложение")
+                return@launch
+            }
+
+            val token = try {
+                user.getIdToken(true).await().token
+            } catch (e: Exception) {
+                showToast("Не удалось получить ID-token: ${e.localizedMessage}")
+                return@launch
+            }
+
+            val booking = BookingRequest(
+                parking_id = id,
+                vehicle_type = "car",
+                plate = "brbr patapim",
+                ts_from = startDateTime,
+                ts_to = endDateTime
+            )
+
+            var formattedMessage: String
+
+            try {
+                val response = ApiClient.parkingApi.createBooking("Bearer $token", booking)
+                if (response.isSuccessful) {
+                    // Форматируем даты для показа пользователю
+                    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+                    val outputFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+
+                    val fromDate = inputFormat.parse(startDateTime)
+                    val toDate = inputFormat.parse(endDateTime)
+
+                    formattedMessage = "Вы забронировали парковочное место\nс " +
+                            "${outputFormat.format(fromDate!!)} по ${outputFormat.format(toDate!!)}"
+                }
+                else formattedMessage = "Ошибка: ${response.code()}"
+            } catch (e: Exception) {
+                formattedMessage = "Сбой: ${e.localizedMessage}"
+            }
+
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("Бронирование")
+                .setMessage(formattedMessage)
+                .setPositiveButton("ОК", null)
+                .show()
+        }
+    }
 }
