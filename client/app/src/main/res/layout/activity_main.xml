@@ -137,11 +137,25 @@
             android:text="Вместимость" />
 
         <TextView
+            android:id="@+id/parking_disabled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Инвалидные места" />
+
+        <TextView
             android:id="@+id/parking_free_spaces"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Свободные места" />
+
+        <TextView
+            android:id="@+id/parking_tariff"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Тариф" />
 
         <TextView
             android:id="@+id/parking_details"

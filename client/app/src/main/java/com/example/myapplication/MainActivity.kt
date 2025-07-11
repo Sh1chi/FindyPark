@@ -84,7 +84,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var parkingTitle: TextView
     private lateinit var parkingAddress: TextView
     private lateinit var parkingCapacity: TextView
+    private lateinit var parkingDisabled: TextView
     private lateinit var parkingFreeSpaces: TextView
+    private lateinit var parkingTariff: TextView
     private lateinit var parkingDetails: TextView
 
     fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
@@ -102,14 +104,6 @@ class MainActivity : AppCompatActivity() {
             Animation(Animation.Type.SMOOTH, 0.5f),
             null
         )
-//        AlertDialog.Builder(this)
-//            .setTitle("Информация")
-//            .setMessage("Вы выбрали парковку №123. Хотите продолжить?")
-//            .setPositiveButton("Да") { _, _ ->
-//                // действие
-//            }
-//            .setNegativeButton("Нет", null)
-//            .show()
 
         if (mapObject is PlacemarkMapObject) {
             val parking = mapObject.userData as? ParkingSpot
@@ -117,9 +111,11 @@ class MainActivity : AppCompatActivity() {
                 selectedParkingId = it.id
                 parkingTitle.text = it.name
                 parkingAddress.text = it.address
-                parkingCapacity.text = "Всего мест:" + it.capacity
+                parkingCapacity.text = "Всего мест: " + it.capacity
+                parkingDisabled.text = "Инвалидных мест: " + it.capacity_disabled
                 parkingFreeSpaces.text = "Свободных мест: " + it.free_spaces
                 parkingDetails.text = it.parking_zone_number
+                parkingTariff.text = "Стоимость в час: 0 руб"
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
 
@@ -128,7 +124,6 @@ class MainActivity : AppCompatActivity() {
                 showDateTimePickerForBooking(selectedParkingId!!)
             }
         }
-        showToast("Tapped the point (${point.longitude}, ${point.latitude})")
         true
     }
 
@@ -209,7 +204,9 @@ class MainActivity : AppCompatActivity() {
         parkingTitle = findViewById(R.id.parking_title)
         parkingAddress = findViewById(R.id.parking_address)
         parkingCapacity = findViewById(R.id.parking_capacity)
+        parkingDisabled = findViewById(R.id.parking_disabled)
         parkingFreeSpaces = findViewById(R.id.parking_free_spaces)
+        parkingTariff = findViewById(R.id.parking_tariff)
         parkingDetails = findViewById(R.id.parking_details)
 
 //        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
@@ -334,8 +331,6 @@ class MainActivity : AppCompatActivity() {
             val assistantDialog = AssistantDialog()
             assistantDialog.show(supportFragmentManager, "assistant_dialog")
         }
-
-
     }
 
     // Активируем карту при старте активности
@@ -375,9 +370,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun showDateTimePickerForBooking(id: Long) {
         val calendar = Calendar.getInstance()
+        val now = Calendar.getInstance()
 
         // Выбор даты начала
-        DatePickerDialog(this, { _, year, month, day ->
+        val startDatePicker = DatePickerDialog(this, { _, year, month, day ->
             calendar.set(year, month, day)
 
             // Время начала
@@ -387,8 +383,14 @@ class MainActivity : AppCompatActivity() {
 
                 val tsFrom = calendar.clone() as Calendar
 
+                // Проверка: нельзя раньше текущего момента
+                if (tsFrom.before(now)) {
+                    showToast("Нельзя выбрать время в прошлом")
+                    return@TimePickerDialog
+                }
+
                 // Дата окончания
-                DatePickerDialog(this, { _, endYear, endMonth, endDay ->
+                val endDatePicker = DatePickerDialog(this, { _, endYear, endMonth, endDay ->
                     calendar.set(endYear, endMonth, endDay)
 
                     // Время окончания
@@ -398,24 +400,37 @@ class MainActivity : AppCompatActivity() {
 
                         val tsTo = calendar.clone() as Calendar
 
-                        // Преобразуем в формат ISO
-                        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                        formatter.timeZone = TimeZone.getDefault() // или TimeZone.getTimeZone("UTC") — если сервер ждёт UTC
+                        // Проверка: окончание должно быть позже начала
+                        if (tsTo <= tsFrom) {
+                            showToast("Время окончания должно быть позже начала")
+                            return@TimePickerDialog
+                        }
+
+                        // Формат ISO
+                        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+                        formatter.timeZone = TimeZone.getDefault()
 
                         val tsFromStr = formatter.format(tsFrom.time)
                         val tsToStr = formatter.format(tsTo.time)
 
-
-                        // Вызываем отправку
                         sendBooking(id, tsFromStr, tsToStr)
 
                     }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
 
-                }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+                }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+
+                // Ограничим выбор даты окончания (не раньше текущей даты)
+                endDatePicker.datePicker.minDate = calendar.timeInMillis
+                endDatePicker.show()
 
             }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
 
-        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+
+        // Ограничим выбор даты начала - не раньше текущей даты
+        startDatePicker.datePicker.minDate = now.timeInMillis
+        startDatePicker.show()
+
     }
 
     private fun sendBooking(id:Long, startDateTime: String, endDateTime: String) {
@@ -441,16 +456,31 @@ class MainActivity : AppCompatActivity() {
                 ts_to = endDateTime
             )
 
-            val resultText = withContext(Dispatchers.IO) {
-                try {
-                    val response = ApiClient.parkingApi.createBooking("Bearer $token", booking)
-                    if (response.isSuccessful) "Успешно отправлено!"
-                    else "Ошибка: ${response.code()}"
-                } catch (e: Exception) {
-                    "Сбой: ${e.localizedMessage}"
+            var formattedMessage: String
+
+            try {
+                val response = ApiClient.parkingApi.createBooking("Bearer $token", booking)
+                if (response.isSuccessful) {
+                    // Форматируем даты для показа пользователю
+                    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+                    val outputFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+
+                    val fromDate = inputFormat.parse(startDateTime)
+                    val toDate = inputFormat.parse(endDateTime)
+
+                    formattedMessage = "Вы забронировали парковочное место\nс " +
+                            "${outputFormat.format(fromDate!!)} по ${outputFormat.format(toDate!!)}"
                 }
+                else formattedMessage = "Ошибка: ${response.code()}"
+            } catch (e: Exception) {
+                formattedMessage = "Сбой: ${e.localizedMessage}"
             }
-            showToast(resultText)
+
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("Бронирование")
+                .setMessage(formattedMessage)
+                .setPositiveButton("ОК", null)
+                .show()
         }
     }
 }
