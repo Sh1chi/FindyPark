@@ -3,12 +3,13 @@ import logging
 import traceback
 import httpx
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from sqlalchemy import text
 
 from app.core.config import get_settings
 from app.schemas.parking_schema import Parking
 from app.db import async_session
+from app.services.tariff_service import upsert_tariffs
 
 DATASET_ID = 623
 ROWS_URL = f"https://apidata.mos.ru/v1/datasets/{DATASET_ID}/rows"
@@ -25,7 +26,7 @@ MAX_TOTAL = 100      # Лимит получаемых записей для т�
 log      = logging.getLogger(__name__)
 settings = get_settings()
 
-def _map_row(row: dict) -> Optional[Parking]:
+def _map_row(row: dict) -> Optional[Tuple[Parking, List[dict]]]:
     """
     Преобразует запись data.mos.ru в объект Parking.
 
@@ -63,7 +64,7 @@ def _map_row(row: dict) -> Optional[Parking]:
 
     capacity = int(cells.get("CarCapacity") or cells.get("TotalPlaces") or 0)
 
-    return Parking(
+    parking = Parking(
         id=gid,
         parking_zone_number=cells.get("ParkingZoneNumber", ""),
         name=cells.get("ParkingName", cells.get("Address", "Без названия")),
@@ -76,6 +77,10 @@ def _map_row(row: dict) -> Optional[Parking]:
         capacity_disabled=int(cells.get("CarCapacityDisabled") or 0),
         free_spaces=capacity,
     )
+    # Теперь забираем список тарифов из row["Cells"]
+    tariffs = row.get("Cells", {}).get("Tariffs", [])  # list of dict
+
+    return parking, tariffs
 
 
 async def _safe_get(client: httpx.AsyncClient, params: dict) -> Optional[list]:
@@ -106,7 +111,7 @@ async def _safe_get(client: httpx.AsyncClient, params: dict) -> Optional[list]:
     return None
 
 
-async def _fetch_all() -> List[Parking]:
+async def _fetch_all() -> List[Tuple[Parking, list]]:
     """
     Загружает все данные о парковках с data.mos.ru постранично.
 
@@ -116,7 +121,7 @@ async def _fetch_all() -> List[Parking]:
     Raises:
         RuntimeError: Если страница не была загружена после повторных попыток.
     """
-    results: List[Parking] = []
+    results: List[Tuple[Parking, list]] = []
     skip = 0
 
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
@@ -152,11 +157,11 @@ async def _fetch_all() -> List[Parking]:
     return results
 
 
-async def _fetch_limited() -> List[Parking]:
+async def _fetch_limited() -> List[Tuple[Parking, list]]:
     """
     Единственный запрос, возвращает первые MAX_TOTAL записей — только для тестов.
     """
-    results: List[Parking] = []
+    results: List[Tuple[Parking, list]] = []
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
         batch = await _safe_get(client, {
             "$top":    MAX_TOTAL,
@@ -172,12 +177,12 @@ async def _fetch_limited() -> List[Parking]:
     return results
 
 
-async def save_parkings_to_db(parkings: List[Parking]) -> None:
+async def save_records_to_db(records: List[Tuple[Parking, list]]) -> None:
     """
     Простая вставка/обновление парковок в БД.
     """
     async with async_session() as session:
-        for p in parkings:
+        for parking, tariffs in records:
             await session.execute(
                 text("""
                     INSERT INTO parkings
@@ -197,21 +202,24 @@ async def save_parkings_to_db(parkings: List[Parking]) -> None:
                         geom                = EXCLUDED.geom
                 """),
                 {
-                    "id": p.id,
-                    "zone": p.parking_zone_number,
-                    "name": p.name,
-                    "address": p.address,
-                    "adm_area": p.adm_area,
-                    "district": p.district,
-                    "capacity": p.capacity,
-                    "capacity_disabled": p.capacity_disabled,
-                    "free_spaces": p.free_spaces,
-                    "lon": p.lon,
-                    "lat": p.lat,
+                    "id": parking.id,
+                    "zone": parking.parking_zone_number,
+                    "name": parking.name,
+                    "address": parking.address,
+                    "adm_area": parking.adm_area,
+                    "district": parking.district,
+                    "capacity": parking.capacity,
+                    "capacity_disabled": parking.capacity_disabled,
+                    "free_spaces": parking.free_spaces,
+                    "lon": parking.lon,
+                    "lat": parking.lat,
                 }
             )
+
+            await upsert_tariffs(parking.id, tariffs, session)
+
         await session.commit()
-    logging.getLogger(__name__).info("Saved %d parking rows to DB", len(parkings))
+    logging.getLogger(__name__).info("Saved %d parking rows to DB", len(records))
 
 
 async def refresh_data() -> None:
@@ -221,12 +229,12 @@ async def refresh_data() -> None:
     while True:
         try:
             if IS_TEST:
-                parkings = await _fetch_limited()
+                records  = await _fetch_limited()
                 #log.info("Test-mode fetch: %s records", len(app_state.parkings))
             else:
-                parkings = await _fetch_all()
+                records  = await _fetch_all()
                 #]log.info("Full fetch: %s records", len(app_state.parkings))
-            await save_parkings_to_db(parkings)
+            await save_records_to_db(records)
         except Exception:
             log.warning("Dataset refresh failed:\n%s", traceback.format_exc())
         await asyncio.sleep(60 * 60)
