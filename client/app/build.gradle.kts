@@ -5,6 +5,7 @@ plugins {
     // Firebase
     id("com.google.gms.google-services")
      // импорт напрямую
+    id("kotlin-parcelize")
 }
 
 android {

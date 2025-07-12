@@ -338,6 +338,13 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         MapKitFactory.getInstance().onStart()
         mapView.onStart()
+        val selectedSpot = intent.getParcelableExtra<ParkingSpot>("selected_spot")
+        selectedSpot?.let {
+            val targetPoint = Point(it.lat, it.lon)
+            mapView.mapWindow.map.move(
+                CameraPosition(targetPoint, 17f, 0f, 0f)
+            )
+        }
     }
 
     // Останавливаем карту при закрытии активности
