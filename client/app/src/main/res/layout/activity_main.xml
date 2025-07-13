@@ -90,13 +90,25 @@
             android:src="@drawable/ic_location"
             android:contentDescription="Показать, где я"
             android:layout_gravity="bottom|end" />
+
+        <!-- Кнопка сброса маршрута -->
+        <ImageButton
+            android:id="@+id/delRouteButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginBottom="30dp"
+            android:background="@drawable/rounded_ripple"
+            android:src="@drawable/ic_gpsoff"
+            android:contentDescription="Показать, где я"
+            android:layout_gravity="bottom|start" />
     </FrameLayout>
 
     <!-- Bottom Sheet -->
     <LinearLayout
         android:id="@+id/bottom_sheet"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
+        android:layout_height="350dp"
         android:orientation="vertical"
         android:padding="16dp"
         android:background="@drawable/bottom_sheet_background"
@@ -165,13 +177,20 @@
             android:text="Дополнительная информация" />
 
         <Button
-            android:id="@+id/bookButton"
+            android:id="@+id/book_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center_horizontal"
-            android:background="@color/black"
             android:contentDescription="Забронировать"
             android:text="Забронировать" />
-    </LinearLayout>
 
+        <Button
+            android:id="@+id/route_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:contentDescription="Построить маршрут"
+            android:text="Построить маршрут" />
+
+    </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
