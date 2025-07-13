@@ -1,9 +1,12 @@
 package com.example.myapplication
 
+import android.content.Intent
+import android.net.Uri
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 
 interface ParkingApi {
@@ -15,4 +18,13 @@ interface ParkingApi {
         @Header("Authorization") token: String,
         @Body booking: BookingRequest
     ): Response<Unit> // или Response<YourResponseModel> если API возвращает JSON
+
+    @GET("/users/me")
+    suspend fun getCurrUser(@Header("Authorization") authHeader: String): User
+
+    @PATCH("/users/me")
+    suspend fun updateCurrUser(
+        @Header("Authorization") token: String,
+        @Body data: UserUpdate
+    ): User
 }

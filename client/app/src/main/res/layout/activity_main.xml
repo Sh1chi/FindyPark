@@ -87,7 +87,7 @@
             android:layout_marginEnd="30dp"
             android:layout_marginBottom="100dp"
             android:background="@drawable/rounded_ripple"
-            android:src="@drawable/ic_pos"
+            android:src="@drawable/ic_location"
             android:contentDescription="Показать, где я"
             android:layout_gravity="bottom|end" />
     </FrameLayout>
@@ -171,7 +171,6 @@
             android:layout_gravity="bottom|center_horizontal"
             android:background="@color/black"
             android:contentDescription="Забронировать"
-            android:src="@drawable/ic_pos"
             android:text="Забронировать" />
     </LinearLayout>
 

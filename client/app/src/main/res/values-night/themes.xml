@@ -8,5 +8,6 @@
         <item name="android:colorBackground">#2f2f2f</item>
         <item name="android:fontFamily">@font/russo_one</item>
         <item name="android:textColor">#FFFFFF</item>
+        <item name="colorLoadingOverlay">#000000</item>
     </style>
 </resources>

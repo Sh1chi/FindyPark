@@ -2,7 +2,7 @@
     <string name="app_name">FindyPark</string>
     <string name="menu">Меню</string>
     <string name="signup_signin">Войти/зарегистрироваться</string>
-    <string name="parking_list">Список парковок</string>
+    <string name="parking_list">Парковки</string>
     <string name="parkings">Парковки</string>
     <string name="settings">Настройки</string>
     <string name="logout">Выход</string>
