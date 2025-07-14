@@ -9,8 +9,8 @@ from firebase_admin import credentials, initialize_app
 from app.core.config import get_settings
 from app.db import test_connection, async_session
 from app.routes import parkings_routes, bookings_routes, assistant_routes, reviews_routes, users_routes
-from app.services.parking_service import refresh_data       # периодический импорт open-data
-from app.services.user_service import refresh_user_data     # синхронизация профилей
+from app.services.parking_service import refresh_data
+from app.services.user_service import refresh_user_data
 
 # Настраиваем базовый логгер
 logging.basicConfig(level=logging.INFO)
@@ -30,7 +30,7 @@ app.include_router(bookings_routes.router)
 app.include_router(reviews_routes.router)
 app.include_router(assistant_routes.router)
 
-# Разрешаем все CORS-запросы (можно ограничить в будущем)
+# Разрешаем все CORS-запросы
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,27 +41,14 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def on_startup():
-    """
-    Обработчик события запуска приложения.
-
-    Создает тестовой соединение с сервером.
-    Синхронизирует данные парковок и пользователей.
-    """
-    await test_connection()  # проверяем и логируем
-    asyncio.create_task(refresh_data())
+    """Обработчик события запуска приложения"""
+    await test_connection()  # проверяем соединение с БД
 
     # Инициализируем Firebase Admin SDK
     cred = credentials.Certificate(settings.firebase_credentials_path)
     initialize_app(cred)
 
-    # Запускаем фоновые синхронизациии
-    asyncio.create_task(refresh_user_data())
+    # Запускаем фоновые задачи
+    asyncio.create_task(refresh_data())  # обновление данных парковок
+    asyncio.create_task(refresh_user_data())  # синхронизация пользователей
 
-    @app.get("/debug/user/{uid}")
-    async def debug_user(uid: str):
-        async with async_session() as ses:
-            user = await ses.execute(
-                text("SELECT * FROM users WHERE user_uid = :uid"),
-                {"uid": uid}
-            )
-            return {"exists": bool(user.scalar())}

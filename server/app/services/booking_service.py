@@ -26,20 +26,28 @@ async def create_booking(data: BookingIn, user_uid: str) -> BookingOut:
     Raises:
         HTTPException: При ошибках валидации
     """
+    # Проверка временного интервала
+    if data.ts_from >= data.ts_to:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Некорректный временной интервал"
+        )
+
     async with async_session() as ses:
-        # 1. Проверка временных коллизий
+        # 1. Проверка временных коллизий (ИСПРАВЛЕННЫЙ ЗАПРОС)
         conflict = await ses.execute(text("""
-            SELECT 1 FROM bookings
-            WHERE parking_id = :parking_id
-            AND ts_from < :ts_to AND ts_to > :ts_from
-            LIMIT 1
-        """), {
+               SELECT COUNT(*) 
+               FROM bookings
+               WHERE parking_id = :parking_id
+               AND ts_from < :ts_to 
+               AND ts_to > :ts_from
+           """), {
             "parking_id": data.parking_id,
             "ts_from": data.ts_from,
             "ts_to": data.ts_to
         })
 
-        if conflict.scalar() is not None:
+        if conflict.scalar() > 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Выбранное время уже занято"
@@ -108,52 +116,42 @@ from sqlalchemy import text
 
 
 async def cancel_booking(booking_id: UUID, user_uid: str) -> None:
-    """
-    Отменяет бронирование и восстанавливает место с проверками:
-    1. Существования брони
-    2. Принадлежности пользователю
-    3. Валидности парковки
-    4. Корректности счетчика мест
-
-    Args:
-        booking_id: UUID бронирования
-        user_uid: UID пользователя
-
-    Raises:
-        HTTPException: 404 если бронь не найдена или не принадлежит пользователю
-    """
     async with async_session() as ses:
-        # 1. Атомарное удаление с проверкой принадлежности
-        result = await ses.execute(text("""
-            WITH deleted_booking AS (
-                DELETE FROM bookings
-                WHERE id = :id AND user_uid = :uid
-                RETURNING parking_id, ts_from, ts_to
-            )
-            SELECT 
-                db.parking_id,
-                p.capacity,
-                p.available_spaces
-            FROM deleted_booking db
-            JOIN parkings p ON p.id = db.parking_id
-        """), {"id": booking_id, "uid": user_uid})
+        try:
+            result = await ses.execute(text("""
+                WITH deleted_booking AS (
+                    DELETE FROM bookings
+                    WHERE id = :id AND user_uid = :uid
+                    RETURNING parking_id, ts_from, ts_to
+                )
+                SELECT 
+                    db.parking_id,
+                    p.capacity,
+                    p.available_spaces,
+                    db.ts_to < NOW() AS is_expired
+                FROM deleted_booking db
+                JOIN parkings p ON p.id = db.parking_id
+            """), {"id": booking_id, "uid": user_uid})
 
-        booking_data = result.first()
+            booking_data = result.first()
+            if not booking_data:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Бронирование не найдено или не принадлежит пользователю"
+                )
 
-        if not booking_data:
+            parking_id, capacity, available_spaces, is_expired = booking_data
+            if not is_expired and 0 <= available_spaces < capacity:
+                await ses.execute(text("""
+                    UPDATE parkings
+                    SET available_spaces = available_spaces + 1
+                    WHERE id = :parking_id
+                """), {"parking_id": parking_id})
+
+            await ses.commit()
+        except Exception as e:
+            await ses.rollback()
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Бронирование не найдено или не принадлежит пользователю"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Ошибка при отмене бронирования"
             )
-
-        parking_id, capacity, available_spaces = booking_data
-
-        # 2. Проверка и обновление счетчика
-        if available_spaces < capacity:
-            await ses.execute(text("""
-                UPDATE parkings
-                SET available_spaces = available_spaces + 1
-                WHERE id = :parking_id
-            """), {"parking_id": parking_id})
-
-        await ses.commit()
