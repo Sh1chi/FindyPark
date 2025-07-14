@@ -137,6 +137,7 @@ class MainActivity : AppCompatActivity() {
             null
         )
 
+
         if (mapObject is PlacemarkMapObject) {
             val parking = mapObject.userData as? ParkingSpot
             parking?.let {
@@ -147,7 +148,14 @@ class MainActivity : AppCompatActivity() {
                 parkingDisabled.text = "Инвалидных мест: " + it.capacity_disabled
                 parkingFreeSpaces.text = "Свободных мест: " + it.free_spaces
                 parkingDetails.text = it.parking_zone_number
-                parkingTariff.text = "Стоимость в час: 0 руб"
+                lifecycleScope.launch {
+                    try{
+                        val tariff = ApiClient.parkingApi.getTariff(selectedParkingId)
+                        parkingTariff.text = "Стоимость в час: ${tariff.hour_price} руб"
+                    }catch (e: Exception){
+                        showToast("${e.localizedMessage}")
+                    }
+                }
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
 

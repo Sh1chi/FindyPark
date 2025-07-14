@@ -8,10 +8,16 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface ParkingApi {
     @GET("/parkings")
     suspend fun getParkings(): List<ParkingSpot>
+
+    @GET("/parkings/{parking_id}/tariff")
+    suspend fun getTariff(
+        @Path("parking_id") parkingId: Long?
+    ): Tariff
 
     @POST("bookings")
     suspend fun createBooking(
