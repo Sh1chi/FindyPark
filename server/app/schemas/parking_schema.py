@@ -31,3 +31,15 @@ class Parking(BaseModel):
     capacity: int
     capacity_disabled: int
     free_spaces: int
+
+
+class ParkingSuggest(BaseModel):
+    """
+    Lightweight model for type-ahead suggestions.
+
+    Only the data the client needs to render a dropdown.
+    """
+    id: int
+    address: str
+    lat: float = Field(..., ge=-90, le=90)
+    lon: float = Field(..., ge=-180, le=180)
