@@ -2,6 +2,9 @@ package com.example.myapplication
 
 import ClusterView
 import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DatePickerDialog
@@ -14,11 +17,15 @@ import android.icu.util.Calendar
 import android.icu.util.TimeZone
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.util.Log.d
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -48,6 +55,7 @@ import com.yandex.mapkit.map.Map
 import kotlinx.coroutines.GlobalScope
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.credentials.exceptions.domerrors.NetworkError
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.yandex.mapkit.RequestPoint
@@ -81,6 +89,7 @@ import com.yandex.mapkit.map.IconStyle
 import com.yandex.mapkit.map.InputListener
 import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.runtime.Error
+import org.w3c.dom.Text
 import kotlin.collections.emptyList
 
 // Объявляем глобальные переменные для карты
@@ -105,6 +114,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var parkingFreeSpaces: TextView
     private lateinit var parkingTariff: TextView
     private lateinit var parkingDetails: TextView
+    private lateinit var searchLayout: LinearLayout
+    private lateinit var searchEditText: EditText
+    private lateinit var closeSearchButton: ImageView
+    private lateinit var findButton: ImageButton
+    private lateinit var bottomSheet: LinearLayout
 
     fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
         Toast.makeText(this, message, duration).show()
@@ -233,7 +247,15 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         // Инициализация элементов UI
+
+        searchLayout = findViewById(R.id.searchLayout)
+        searchEditText = findViewById(R.id.searchEditText)
+        closeSearchButton = findViewById(R.id.closeSearch)
+        findButton = findViewById(R.id.findButton)
+        bottomSheet = findViewById(R.id.bottom_sheet)
+
         // Получаем MapView и настраиваем камеру (центр и зум)
         mapView = findViewById(R.id.mapview)
         map = mapView.mapWindow.map
@@ -381,6 +403,31 @@ class MainActivity : AppCompatActivity() {
                 routePoints = emptyList()
             }
         }
+
+        // Открытие строки поиска с анимацией
+        findButton.setOnClickListener {
+            openSearch()
+            findButton.isEnabled = false
+        }
+
+        // Закрытие строки поиска с анимацией
+        closeSearchButton.setOnClickListener {
+            searchEditText.text.clear()
+            closeSearch()
+            findButton.isEnabled = true
+        }
+
+        // Обработчик для поиска
+        searchEditText.addTextChangedListener(object: TextWatcher{
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                // Здесь ты получаешь текст, который был введен в EditText
+                showToast("Текст поиска: ${s.toString()}")
+            }
+        })
     }
 
     // Активируем карту при старте активности
@@ -624,6 +671,26 @@ class MainActivity : AppCompatActivity() {
             outlineColor = ContextCompat.getColor(this@MainActivity, R.color.black)
             outlineWidth = 2f
         }
+    }
+
+    // Функция для открытия строки поиска с анимацией
+    private fun openSearch() {
+        searchLayout.visibility = View.VISIBLE
+        val transition = ObjectAnimator.ofFloat(searchLayout, "translationY", -300f, 0f)
+        transition.duration = 500
+        transition.start()
+    }
+
+    // Функция для закрытия строки поиска с анимацией
+    private fun closeSearch() {
+        val transition = ObjectAnimator.ofFloat(searchLayout, "translationY", 0f, -300f)
+        transition.duration = 400
+        transition.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                searchLayout.visibility = View.GONE
+            }
+        })
+        transition.start()
     }
 
 }
