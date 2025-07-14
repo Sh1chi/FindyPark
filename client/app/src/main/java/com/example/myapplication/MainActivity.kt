@@ -2,6 +2,9 @@ package com.example.myapplication
 
 import ClusterView
 import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DatePickerDialog
@@ -14,11 +17,16 @@ import android.icu.util.Calendar
 import android.icu.util.TimeZone
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.util.Log.d
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -47,7 +55,12 @@ import com.yandex.mapkit.map.ClusterizedPlacemarkCollection
 import com.yandex.mapkit.map.Map
 import kotlinx.coroutines.GlobalScope
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
+import androidx.credentials.exceptions.domerrors.NetworkError
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.yandex.mapkit.RequestPoint
+import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.UserData
 import com.yandex.mapkit.layers.ObjectEvent
 import com.yandex.mapkit.map.ClusterTapListener
@@ -65,7 +78,20 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.Locale
-
+import com.yandex.mapkit.directions.DirectionsFactory
+import com.yandex.mapkit.directions.driving.DrivingOptions
+import com.yandex.mapkit.directions.driving.DrivingRoute
+import com.yandex.mapkit.directions.driving.DrivingRouter
+import com.yandex.mapkit.directions.driving.DrivingRouterType
+import com.yandex.mapkit.directions.driving.DrivingSession
+import com.yandex.mapkit.directions.driving.DrivingSession.DrivingRouteListener
+import com.yandex.mapkit.directions.driving.VehicleOptions
+import com.yandex.mapkit.map.IconStyle
+import com.yandex.mapkit.map.InputListener
+import com.yandex.mapkit.map.PolylineMapObject
+import com.yandex.runtime.Error
+import org.w3c.dom.Text
+import kotlin.collections.emptyList
 
 // Объявляем глобальные переменные для карты
 
@@ -76,6 +102,7 @@ private const val MIN_ZOOM = 15
 
 class MainActivity : AppCompatActivity() {
     private lateinit var mapView: MapView
+    private lateinit var map: Map
     private lateinit var collection: MapObjectCollection
     private lateinit var clasterizedCollection: ClusterizedPlacemarkCollection
     private lateinit var userLocationLayer: UserLocationLayer
@@ -88,6 +115,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var parkingFreeSpaces: TextView
     private lateinit var parkingTariff: TextView
     private lateinit var parkingDetails: TextView
+    private lateinit var searchLayout: LinearLayout
+    private lateinit var searchEditText: EditText
+    private lateinit var closeSearchButton: ImageView
+    private lateinit var findButton: ImageButton
+    private lateinit var bottomSheet: LinearLayout
 
     fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
         Toast.makeText(this, message, duration).show()
@@ -119,9 +151,14 @@ class MainActivity : AppCompatActivity() {
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
 
-            val bookButton = findViewById<Button>(R.id.bookButton)
+            val bookButton = findViewById<Button>(R.id.book_button)
             bookButton.setOnClickListener {
                 showDateTimePickerForBooking(selectedParkingId!!)
+            }
+
+            val routeButton = findViewById<Button>(R.id.route_button)
+            routeButton.setOnClickListener {
+                makeRoute(parking!!)
             }
         }
         true
@@ -166,6 +203,36 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    private val drivingRouteListener = object : DrivingRouteListener {
+        override fun onDrivingRoutes(drivingRoutes: MutableList<DrivingRoute>) {
+            routes = drivingRoutes
+        }
+
+        override fun onDrivingRoutesError(error: Error) {
+            when (error) {
+                is NetworkError -> showToast("Routes request error due network issues")
+                else -> showToast("Routes request unknown error")
+            }
+        }
+    }
+
+    private var routePoints = emptyList<Point>()
+        set(value) {
+            field = value
+            onRoutePointsUpdated()
+        }
+
+    private var routes = emptyList<DrivingRoute>()
+        set(value) {
+            field = value
+            onRoutesUpdated()
+        }
+
+    private lateinit var drivingRouter: DrivingRouter
+    private var drivingSession: DrivingSession? = null
+    private lateinit var placemarksCollection: MapObjectCollection
+    private lateinit var routesCollection: MapObjectCollection
+
     //////////////////////////////////////////////
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -181,10 +248,18 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         // Инициализация элементов UI
+
+        searchLayout = findViewById(R.id.searchLayout)
+        searchEditText = findViewById(R.id.searchEditText)
+        closeSearchButton = findViewById(R.id.closeSearch)
+        findButton = findViewById(R.id.findButton)
+        bottomSheet = findViewById(R.id.bottom_sheet)
+
         // Получаем MapView и настраиваем камеру (центр и зум)
         mapView = findViewById(R.id.mapview)
-        val map = mapView.mapWindow.map
+        map = mapView.mapWindow.map
         map.move(
             CameraPosition(
                 Point(55.751225, 37.62954), // координаты центра (Москва)
@@ -193,6 +268,11 @@ class MainActivity : AppCompatActivity() {
                 0.0f   // наклон
             )
         )
+
+        placemarksCollection = map.mapObjects.addCollection()
+        routesCollection = map.mapObjects.addCollection()
+
+        drivingRouter = DirectionsFactory.getInstance().createDrivingRouter(DrivingRouterType.COMBINED)
 
         val bottomSheet = findViewById<LinearLayout>(R.id.bottom_sheet)
         if (bottomSheet == null) {
@@ -208,23 +288,6 @@ class MainActivity : AppCompatActivity() {
         parkingFreeSpaces = findViewById(R.id.parking_free_spaces)
         parkingTariff = findViewById(R.id.parking_tariff)
         parkingDetails = findViewById(R.id.parking_details)
-
-//        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-//            override fun onStateChanged(bottomSheet: View, newState: Int) {
-//                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-//                    parkingTitle.animate().alpha(1f).setDuration(200).start()
-//                    parkingAddress.animate().alpha(1f).setDuration(200).start()
-//                    parkingDetails.animate().alpha(1f).setDuration(200).start()
-//                }
-//            }
-//
-//            override fun onSlide(bottomSheet: View, slideOffset: Float) {
-//                // Плавное изменение прозрачности при смахивании
-//                parkingTitle.alpha = slideOffset
-//                parkingAddress.alpha = slideOffset
-//                parkingDetails.alpha = slideOffset
-//            }
-//        })
 
         // ЗАПРАШИВАЕМ РАЗРЕШЕНИЕ НА ИСПОЛЬЗОВАНИЕ ГЕОПОЗИЦИИ
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -326,11 +389,44 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val botButton = findViewById<ImageButton>(R.id.helpButton)
-        botButton.setOnClickListener {
+        val helpButton = findViewById<ImageButton>(R.id.helpButton)
+        helpButton.setOnClickListener {
             val assistantDialog = AssistantDialog()
             assistantDialog.show(supportFragmentManager, "assistant_dialog")
         }
+
+        val delRouteButton = findViewById<ImageButton>(R.id.delRouteButton)
+        delRouteButton.setOnClickListener {
+            if (routePoints.isEmpty()){
+                showToast("Нет пути, для удаления")
+            }
+            else {
+                routePoints = emptyList()
+            }
+        }
+
+        // Открытие строки поиска с анимацией
+        findButton.setOnClickListener {
+            openSearch()
+        }
+
+        // Закрытие строки поиска с анимацией
+        closeSearchButton.setOnClickListener {
+            searchEditText.text.clear()
+            closeSearch()
+        }
+
+        // Обработчик для поиска
+        searchEditText.addTextChangedListener(object: TextWatcher{
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                // Здесь ты получаешь текст, который был введен в EditText
+                showToast("Текст поиска: ${s.toString()}")
+            }
+        })
     }
 
     // Активируем карту при старте активности
@@ -338,6 +434,13 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         MapKitFactory.getInstance().onStart()
         mapView.onStart()
+        val selectedSpot = intent.getParcelableExtra<ParkingSpot>("selected_spot")
+        selectedSpot?.let {
+            val targetPoint = Point(it.lat, it.lon)
+            mapView.mapWindow.map.move(
+                CameraPosition(targetPoint, 17f, 0f, 0f)
+            )
+        }
     }
 
     // Останавливаем карту при закрытии активности
@@ -363,9 +466,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun showUserLocation(){
-        val mapKit = MapKitFactory.getInstance()
-        userLocationLayer = mapKit.createUserLocationLayer(mapView.mapWindow)
-        userLocationLayer.isVisible = true
+        if (!::userLocationLayer.isInitialized) {
+            val mapKit = MapKitFactory.getInstance()
+            userLocationLayer = mapKit.createUserLocationLayer(mapView.mapWindow)
+            userLocationLayer.isVisible = true
+        }
     }
 
     private fun showDateTimePickerForBooking(id: Long) {
@@ -483,4 +588,117 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
     }
+
+    private fun makeRoute(parking: ParkingSpot){
+        val userLocationView = userLocationLayer.cameraPosition()
+        if (userLocationView != null) {
+            val userPoint = userLocationView.target
+            val parkingPoint = Point(parking.lat, parking.lon)
+
+            routePoints = listOf(userPoint, parkingPoint)
+        } else {
+            showToast("Геопозиция не определена")
+        }
+    }
+    private fun onRoutePointsUpdated() {
+        placemarksCollection.clear()
+
+        if (routePoints.isEmpty()) {
+            drivingSession?.cancel()
+            routes = emptyList()
+            return
+        }
+
+        val imageProvider = ImageProvider.fromResource(this, R.drawable.bullet)
+        routePoints.forEach {
+            placemarksCollection.addPlacemark().apply {
+                geometry = it
+                setIcon(imageProvider, IconStyle().apply {
+                    scale = 0.5f
+                    zIndex = 20f
+                })
+            }
+        }
+
+        if (routePoints.size < 2) return
+
+        val requestPoints = buildList {
+            add(RequestPoint(routePoints.first(), RequestPointType.WAYPOINT, null, null, null))
+            addAll(
+                routePoints.subList(1, routePoints.size - 1)
+                    .map { RequestPoint(it, RequestPointType.VIAPOINT, null, null, null) })
+            add(RequestPoint(routePoints.last(), RequestPointType.WAYPOINT, null, null, null))
+        }
+
+        val drivingOptions = DrivingOptions()
+        val vehicleOptions = VehicleOptions()
+
+        drivingSession = drivingRouter.requestRoutes(
+            requestPoints,
+            drivingOptions,
+            vehicleOptions,
+            drivingRouteListener,
+        )
+    }
+
+    private fun onRoutesUpdated() {
+        routesCollection.clear()
+        if (routes.isEmpty()) return
+
+        routes.forEachIndexed { index, route ->
+            routesCollection.addPolyline(route.geometry).apply {
+                if (index == 0) styleMainRoute() else styleAlternativeRoute()
+            }
+        }
+    }
+
+    private fun PolylineMapObject.styleMainRoute() {
+        zIndex = 10f
+        setStrokeColor(ContextCompat.getColor(this@MainActivity, R.color.blue_500))
+        style = style.apply {
+            strokeWidth = 5f
+            outlineColor = ContextCompat.getColor(this@MainActivity, R.color.black)
+            outlineWidth = 3f
+        }
+    }
+
+    private fun PolylineMapObject.styleAlternativeRoute() {
+        zIndex = 5f
+        setStrokeColor(ContextCompat.getColor(this@MainActivity, R.color.grey_300))
+        style = style.apply {
+            strokeWidth = 4f
+            outlineColor = ContextCompat.getColor(this@MainActivity, R.color.black)
+            outlineWidth = 2f
+        }
+    }
+
+    // Функция для открытия строки поиска с анимацией
+    private fun openSearch() {
+        searchLayout.visibility = View.VISIBLE
+        val transition = ObjectAnimator.ofFloat(searchLayout, "translationY", -300f, 0f)
+        transition.duration = 400
+        transition.start()
+
+        searchEditText.requestFocus()
+
+        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT)
+
+    }
+
+    // Функция для закрытия строки поиска с анимацией
+    private fun closeSearch() {
+        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(searchEditText.windowToken, 0)
+
+        val transition = ObjectAnimator.ofFloat(searchLayout, "translationY", 0f, -300f)
+        transition.duration = 400
+        transition.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                searchLayout.visibility = View.GONE
+            }
+        })
+        transition.start()
+    }
+
 }

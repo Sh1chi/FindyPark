@@ -8,4 +8,8 @@
     <color name="grey_300">#FFE0E0E0</color>
     <color name="blue_500">#FF2196F3</color>
     <color name="red_500">#FFF44336</color>
+    <color name="button1">#e5f5e2</color>
+    <color name="light_green">#C0E6BA</color>
+    <color name="green">#4CA771</color>
+    <color name="dark_green">#013237</color>
 </resources>

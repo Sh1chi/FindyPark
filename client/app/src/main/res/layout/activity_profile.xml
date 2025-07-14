@@ -30,14 +30,14 @@
             android:id="@+id/parkingLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/menu"
-            android:textSize="30sp" />
+            android:text="Профиль пользователя"
+            android:textSize="27sp" />
     </LinearLayout>
 
     <!-- Список пунктов меню -->
     <LinearLayout
-        android:id="@+id/menuItemsContainer"
-        android:layout_width="match_parent"
+        android:id="@+id/profileItemsContainer"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintTop_toBottomOf="@id/topBar"
@@ -46,12 +46,11 @@
 
         <!-- Логин пользователя -->
         <TextView
-            android:id="@+id/menu_user"
+            android:id="@+id/user_login"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Профиль пользователя"
-            android:textSize="20sp"
-            android:paddingVertical="20dp"
+            android:textSize="18sp"
+            android:paddingVertical="12dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
@@ -62,12 +61,11 @@
             android:background="#DDDDDD" />
 
         <TextView
-            android:id="@+id/menu_parking"
+            android:id="@+id/user_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Парковки"
-            android:textSize="20sp"
-            android:paddingVertical="20dp"
+            android:textSize="18sp"
+            android:paddingVertical="12dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
@@ -78,12 +76,11 @@
             android:background="#DDDDDD" />
 
         <TextView
-            android:id="@+id/menu_settings"
+            android:id="@+id/user_phone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Настройки"
-            android:textSize="20sp"
-            android:paddingVertical="20dp"
+            android:textSize="18sp"
+            android:paddingVertical="12dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
@@ -94,20 +91,63 @@
             android:background="#DDDDDD" />
 
         <TextView
-            android:id="@+id/menu_about"
+            android:id="@+id/user_vehicle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="О приложении"
-            android:textSize="20sp"
-            android:paddingVertical="20dp"
+            android:textSize="18sp"
+            android:paddingVertical="12dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
+        <!-- Выйти -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#DDDDDD" />
 
+        <TextView
+            android:id="@+id/user_plate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="12dp"
+            android:background="?android:selectableItemBackground"/>
+
+        <!-- Выйти -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDDDDD" />
+
+        <TextView
+            android:id="@+id/user_exit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Выйти"
+            android:textSize="18sp"
+            android:textColor="@color/red_500"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="12dp"
+            android:background="?android:selectableItemBackground" />
+
     </LinearLayout>
+
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/loadingScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible"
+        android:background="?attr/colorLoadingOverlay"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

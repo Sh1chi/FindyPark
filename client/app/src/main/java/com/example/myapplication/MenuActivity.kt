@@ -20,9 +20,6 @@ class MenuActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_menu)
 
-        // Установим логин
-        val loginTextView = findViewById<TextView>(R.id.userLogin)
-        loginTextView.text = auth.currentUser?.email
 
         // Кнопка "назад"
         val backButton = findViewById<ImageButton>(R.id.backButton)
@@ -31,6 +28,14 @@ class MenuActivity : AppCompatActivity() {
         }
 
         // Обработка пунктов меню
+
+        findViewById<TextView>(R.id.menu_user).setOnClickListener{
+            Toast.makeText(this, "Открываем Профиль", Toast.LENGTH_SHORT).show()
+            // Пример перехода на активность с парковками
+            val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
+        }
+
         findViewById<TextView>(R.id.menu_parking).setOnClickListener {
             Toast.makeText(this, "Открываем Парковки", Toast.LENGTH_SHORT).show()
             // Пример перехода на активность с парковками
@@ -50,13 +55,6 @@ class MenuActivity : AppCompatActivity() {
             // Пример перехода на настройки
             val intent = Intent(this, AboutActivity::class.java)
             startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.menu_exit).setOnClickListener {
-            Toast.makeText(this, "Выходим", Toast.LENGTH_SHORT).show()
-            auth.signOut()
-            startActivity(Intent(this, RegistrationActivity::class.java))
-            finish()
         }
 
         // Добавляй другие пункты аналогично

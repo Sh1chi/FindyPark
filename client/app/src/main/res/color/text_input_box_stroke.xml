@@ -1,0 +1,4 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/dark_green" android:state_focused="true" /> <!-- Цвет при фокусе -->
+    <item android:color="@color/green" /> <!-- Цвет по умолчанию -->
+</selector>
