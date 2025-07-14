@@ -22,6 +22,7 @@ import android.text.TextWatcher
 import android.util.Log
 import android.util.Log.d
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -407,14 +408,12 @@ class MainActivity : AppCompatActivity() {
         // Открытие строки поиска с анимацией
         findButton.setOnClickListener {
             openSearch()
-            findButton.isEnabled = false
         }
 
         // Закрытие строки поиска с анимацией
         closeSearchButton.setOnClickListener {
             searchEditText.text.clear()
             closeSearch()
-            findButton.isEnabled = true
         }
 
         // Обработчик для поиска
@@ -677,12 +676,21 @@ class MainActivity : AppCompatActivity() {
     private fun openSearch() {
         searchLayout.visibility = View.VISIBLE
         val transition = ObjectAnimator.ofFloat(searchLayout, "translationY", -300f, 0f)
-        transition.duration = 500
+        transition.duration = 400
         transition.start()
+
+        searchEditText.requestFocus()
+
+        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT)
+
     }
 
     // Функция для закрытия строки поиска с анимацией
     private fun closeSearch() {
+        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(searchEditText.windowToken, 0)
+
         val transition = ObjectAnimator.ofFloat(searchLayout, "translationY", 0f, -300f)
         transition.duration = 400
         transition.addListener(object : AnimatorListenerAdapter() {

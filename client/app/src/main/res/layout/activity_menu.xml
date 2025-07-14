@@ -10,8 +10,8 @@
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="411dp"
-        android:layout_height="48dp"
-        android:background="@android:color/holo_blue_bright"
+        android:layout_height="60dp"
+        android:background="@color/light_green"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         app:layout_constraintTop_toTopOf="parent"
@@ -23,6 +23,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/back_button_ripple"
+            app:tint="@color/dark_green"
             android:src="@drawable/ic_back" />
 
         <TextView
@@ -30,7 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/menu"
-            android:textSize="24sp" />
+            android:textSize="30sp" />
     </LinearLayout>
 
     <!-- Список пунктов меню -->
@@ -49,8 +50,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Профиль пользователя"
-            android:textSize="18sp"
-            android:paddingVertical="12dp"
+            android:textSize="20sp"
+            android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
@@ -65,8 +66,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Парковки"
-            android:textSize="18sp"
-            android:paddingVertical="12dp"
+            android:textSize="20sp"
+            android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
@@ -81,8 +82,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Настройки"
-            android:textSize="18sp"
-            android:paddingVertical="12dp"
+            android:textSize="20sp"
+            android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
@@ -97,8 +98,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="О приложении"
-            android:textSize="18sp"
-            android:paddingVertical="12dp"
+            android:textSize="20sp"
+            android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 

@@ -66,7 +66,12 @@ class ProfileActivity : AppCompatActivity() {
                 loginTextView.text = currUser.email
                 nameTextView.text = currUser.display_name
                 phoneTextView.text = currUser.phone ?: "Номер телефона не указан"
-                vehicleTextView.text = currUser.vehicle_type ?: "Тип ТС не указан"
+                when (currUser.vehicle_type){
+                    "car" -> vehicleTextView.text = "Легковой автомобиль"
+                    "truck" -> vehicleTextView.text = "Грузовой автомобиль"
+                    "moto" -> vehicleTextView.text = "Мотоцикл"
+                    null -> vehicleTextView.text = "Тип ТС не указан"
+                }
                 plateTextView.text = currUser.plate ?: "Гос.номер не указан"
             } catch (e: Exception) {
                 showToast("Ошибка загрузки профиля: ${e.localizedMessage}")
@@ -150,8 +155,14 @@ class ProfileActivity : AppCompatActivity() {
                 .setPositiveButton("OK") { _, _ ->
                     val selectedVehicle = spinner.selectedItem.toString()
                     vehicleTextView.text = selectedVehicle
+                    var selectedVehicleToServer: String? = null
+                    when (selectedVehicle){
+                        "Легковой автомобиль" -> selectedVehicleToServer = "car"
+                        "Грузовой автомобиль" -> selectedVehicleToServer = "truck"
+                        "Мотоцикл" -> selectedVehicleToServer = "moto"
+                    }
                     lifecycleScope.launch {
-                        val updateData = UserUpdate(vehicle_type = selectedVehicle)
+                        val updateData = UserUpdate(vehicle_type = selectedVehicleToServer)
                         try {
                             ApiClient.parkingApi.updateCurrUser("Bearer $idToken", updateData)
                             showToast("Тип ТС успешно обновлен")

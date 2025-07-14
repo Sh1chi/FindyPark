@@ -21,10 +21,12 @@
         <!-- Меню -->
         <ImageButton
             android:id="@+id/menuButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
             android:layout_margin="30dp"
             android:background="@drawable/rounded_ripple"
+            app:tint="@color/dark_green"
+            android:elevation="7dp"
             android:src="@drawable/ic_menu"
             android:contentDescription="Меню"
             android:layout_gravity="top|start" />
@@ -32,10 +34,12 @@
         <!-- Поиск -->
         <ImageButton
             android:id="@+id/findButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
             android:layout_margin="30dp"
             android:background="@drawable/rounded_ripple"
+            app:tint="@color/dark_green"
+            android:elevation="7dp"
             android:src="@drawable/ic_finder"
             android:contentDescription="Найти"
             android:layout_gravity="top|end" />
@@ -48,9 +52,9 @@
             android:layout_marginTop="20dp"
             android:layout_marginRight="5dp"
             android:background="@drawable/find_background"
-            android:elevation="4dp"
+            android:elevation="8dp"
             android:orientation="horizontal"
-            android:padding="8dp"
+            android:padding="5dp"
             android:visibility="gone">
 
             <EditText
@@ -58,6 +62,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_margin="5dp"
                 android:hint="Поиск..."
                 android:inputType="text" />
 
@@ -66,7 +71,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:layout_marginEnd="5dp"
                 android:background="?android:selectableItemBackground"
+                app:tint="@color/dark_green"
                 android:contentDescription="Закрыть поиск"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"/>
         </LinearLayout>
@@ -74,12 +81,14 @@
         <!-- Ассистент -->
         <ImageButton
             android:id="@+id/helpButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="54dp"
+            android:layout_height="54dp"
             android:layout_gravity="bottom|end"
             android:layout_marginEnd="26dp"
             android:layout_marginBottom="30dp"
             android:background="@drawable/rounded_ripple_bot"
+            app:tint="@color/dark_green"
+            android:elevation="7dp"
             android:contentDescription="Помощь"
             android:src="@drawable/ic_bot" />
 
@@ -90,21 +99,31 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical|end"
             android:orientation="vertical"
-            android:layout_marginEnd="30dp">
+            android:layout_marginEnd="15dp">
 
             <ImageButton
                 android:id="@+id/plusButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginTop="15dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginStart="10dp"
                 android:background="@drawable/rounded_ripple"
+                app:tint="@color/dark_green"
+                android:elevation="7dp"
                 android:contentDescription="Увеличить масштаб"
                 android:src="@drawable/ic_plus" />
 
             <ImageButton
                 android:id="@+id/minButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginBottom="15dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginStart="10dp"
                 android:background="@drawable/rounded_ripple"
+                app:tint="@color/dark_green"
+                android:elevation="7dp"
                 android:contentDescription="Уменьшить масштаб"
                 android:src="@drawable/ic_min"
                 android:layout_marginTop="8dp" />
@@ -113,11 +132,13 @@
         <!-- Кнопка моей геопозиции -->
         <ImageButton
             android:id="@+id/posButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
             android:layout_marginEnd="30dp"
             android:layout_marginBottom="100dp"
             android:background="@drawable/rounded_ripple"
+            app:tint="@color/dark_green"
+            android:elevation="7dp"
             android:src="@drawable/ic_location"
             android:contentDescription="Показать, где я"
             android:layout_gravity="bottom|end" />
@@ -125,14 +146,18 @@
         <!-- Кнопка сброса маршрута -->
         <ImageButton
             android:id="@+id/delRouteButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
             android:layout_marginStart="30dp"
             android:layout_marginBottom="30dp"
             android:background="@drawable/rounded_ripple"
+            app:tint="@color/dark_green"
+            android:elevation="7dp"
             android:src="@drawable/ic_gpsoff"
-            android:contentDescription="Показать, где я"
+            android:contentDescription="Сбросить маршрут"
             android:layout_gravity="bottom|start" />
+
+
     </FrameLayout>
 
     <!-- Bottom Sheet -->
@@ -222,6 +247,7 @@
             android:layout_gravity="bottom|center_horizontal"
             android:contentDescription="Построить маршрут"
             android:text="Построить маршрут" />
-
     </LinearLayout>
+
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
