@@ -1,8 +1,10 @@
 from fastapi import APIRouter,  Query, HTTPException
 from sqlalchemy import text
+from sqlalchemy import Float, Integer, bindparam
 
 from app.db import async_session
 from app.schemas.parking_schema import Parking
+from app.schemas.parking_schema import ParkingSuggest
 
 router = APIRouter(prefix="/parkings", tags=["parkings"])
 
@@ -92,3 +94,68 @@ async def list_parkings(
         })).mappings().all()
 
     return [Parking(**row) for row in rows]
+
+
+@router.get("/suggest", response_model=list[ParkingSuggest])
+async def suggest_parkings(
+    q: str = Query(..., min_length=2, max_length=60,
+                   description="Начало адреса, минимум 2 символа"),
+    lat: float | None = Query(None, ge=-90, le=90,
+                              description="Текущая широта (для ранжирования)"),
+    lon: float | None = Query(None, ge=-180, le=180,
+                              description="Текущая долгота"),
+    limit: int = Query(10, ge=1, le=20, description="Сколько подсказок вернуть"),
+):
+    """
+    Type-ahead адресных подсказок **только по нашим парковкам**.
+
+    - Сначала сортируем по текстовой похожести (pg_trgm `similarity` DESC).
+    - При наличии `lat`/`lon` добавляем ранжирование по расстоянию (ASC).
+    """
+    prefix = f"{q}%"
+
+    sql = text("""
+    WITH origin AS (
+        SELECT CASE
+            WHEN :lat IS NULL OR :lon IS NULL THEN NULL::geography
+            ELSE ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography
+        END AS g
+    ),
+    ranked AS (
+        SELECT
+            p.id,
+            p.address,
+            ST_Y(p.geom::geometry)  AS lat,
+            ST_X(p.geom::geometry)  AS lon,
+            similarity(p.address, :q) AS text_score,
+            CASE
+                WHEN (SELECT g FROM origin) IS NOT NULL
+                THEN p.geom::geography <-> (SELECT g FROM origin)
+                ELSE NULL
+            END AS distance_m
+        FROM parkings AS p
+        WHERE address ILIKE :prefix
+           OR address % :q
+    )
+    SELECT *
+    FROM ranked
+    ORDER BY text_score DESC, COALESCE(distance_m, 1e9) ASC
+    LIMIT :limit;
+    """).bindparams(
+        bindparam("lat",     type_=Float),
+        bindparam("lon",     type_=Float),
+        bindparam("q"),                      # строка, тип по умолчанию
+        bindparam("prefix"),                 # для ILIKE
+        bindparam("limit",   type_=Integer),
+    )
+
+    # Открываем сессию и выполняем запрос
+    async with async_session() as session:
+        result = await session.execute(
+            sql,
+            {"lat": lat, "lon": lon, "q": q, "prefix": prefix, "limit": limit}
+        )
+        rows = result.mappings().all()
+
+    # Преобразуем в Pydantic-модель для ответа
+    return [ParkingSuggest(**row) for row in rows]
