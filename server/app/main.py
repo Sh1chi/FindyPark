@@ -7,9 +7,10 @@ from firebase_admin import credentials, initialize_app
 
 from app.core.config import get_settings
 from app.db import test_connection
-from app.routes import parkings_routes, bookings_routes, assistant_routes, reviews_routes, users_routes
+from app.routes import parkings_routes, bookings_routes, assistant_routes, reviews_routes, users_routes, tariffs_routes
 from app.services.parking_service import refresh_data       # периодический импорт open-data
 from app.services.user_service import refresh_user_data     # синхронизация профилей
+
 
 # Настраиваем базовый логгер
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +25,7 @@ app = FastAPI(
 
 # Подключаем все роутеры
 app.include_router(parkings_routes.router)
+app.include_router(tariffs_routes.router)
 app.include_router(users_routes.router)
 app.include_router(bookings_routes.router)
 app.include_router(reviews_routes.router)
