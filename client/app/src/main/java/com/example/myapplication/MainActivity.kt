@@ -126,6 +126,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchEditText: EditText
     private lateinit var closeSearchButton: ImageView
     private lateinit var findButton: ImageButton
+    private lateinit var supportButton: ImageButton
+    private lateinit var delRouteButton: ImageButton
     private lateinit var bottomSheet: LinearLayout
     private lateinit var suggestionAdapter: ParkingSuggestionAdapter
     private lateinit var parkingRecyclerView: RecyclerView
@@ -245,6 +247,8 @@ class MainActivity : AppCompatActivity() {
         findButton = findViewById(R.id.findButton)
         bottomSheet = findViewById(R.id.bottom_sheet)
         parkingRecyclerView = findViewById(R.id.parkingRecyclerView)
+        supportButton = findViewById(R.id.supportButton)
+        delRouteButton = findViewById(R.id.delRouteButton)
 
         // Инициализация RecyclerView
         suggestionAdapter = ParkingSuggestionAdapter { parking ->
@@ -411,13 +415,15 @@ class MainActivity : AppCompatActivity() {
             assistantDialog.show(supportFragmentManager, "assistant_dialog")
         }
 
-        val delRouteButton = findViewById<ImageButton>(R.id.delRouteButton)
+
         delRouteButton.setOnClickListener {
             if (routePoints.isEmpty()){
                 showToast("Нет пути, для удаления")
             }
             else {
                 routePoints = emptyList()
+                delRouteButton.visibility = View.GONE
+                supportButton.visibility = View.VISIBLE
             }
         }
 
@@ -455,6 +461,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+
+        supportButton.setOnClickListener {
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("Тех.поддержка")
+                .setMessage("Для связи с тех.поддержкой, пожалуйста, напишите в Telegram по одному из " +
+                        "следующих тегов:\n@Sh1chik\n@qui_ibi\n@vova_barysh")
+                .setPositiveButton("ОК", null)
+                .show()
+        }
     }
 
     // Активируем карту при старте активности
@@ -624,6 +639,8 @@ class MainActivity : AppCompatActivity() {
             val parkingPoint = Point(parking.lat, parking.lon)
 
             routePoints = listOf(userPoint, parkingPoint)
+            supportButton.visibility = View.GONE
+            delRouteButton.visibility = View.VISIBLE
         } else {
             showToast("Геопозиция не определена")
         }

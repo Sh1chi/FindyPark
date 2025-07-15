@@ -171,11 +171,23 @@
             android:background="@drawable/rounded_ripple"
             app:tint="@color/dark_green"
             android:elevation="7dp"
-            android:src="@drawable/ic_gpsoff"
+            android:src="@drawable/ic_del_route"
             android:contentDescription="Сбросить маршрут"
+            android:layout_gravity="bottom|start"
+            android:visibility="gone"/>
+
+        <ImageButton
+            android:id="@+id/supportButton"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginBottom="30dp"
+            android:background="@drawable/rounded_ripple"
+            app:tint="@color/dark_green"
+            android:elevation="7dp"
+            android:src="@drawable/ic_support"
+            android:contentDescription="Написать в тех.поддержку"
             android:layout_gravity="bottom|start" />
-
-
     </FrameLayout>
 
     <!-- Bottom Sheet -->
