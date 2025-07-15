@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -26,6 +27,8 @@ class RegistrationActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
 
+    private lateinit var btnForgotPassword: Button
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_registration)
@@ -36,9 +39,10 @@ class RegistrationActivity : AppCompatActivity() {
         val etPassword = findViewById<EditText>(R.id.etPassword)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
-        val btnForgotPassword = findViewById<Button>(R.id.btnForgotPassword)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val tvError = findViewById<TextView>(R.id.tvError)
+        btnForgotPassword = findViewById(R.id.btnForgotPassword)
+
 
         // Регистрация по Email/Password
         btnRegister.setOnClickListener {
@@ -65,7 +69,12 @@ class RegistrationActivity : AppCompatActivity() {
         }
 
         btnForgotPassword.setOnClickListener {
-            Toast.makeText(this, "Функция восстановления пароля в разработке", Toast.LENGTH_SHORT).show()
+            AlertDialog.Builder(this@RegistrationActivity)
+                .setTitle("Тех.поддержка")
+                .setMessage("Для связи с тех.поддержкой, пожалуйста, напишите в Telegram по одному из " +
+                        "следующих тегов:\n@Sh1chik\n@qui_ibi\n@vova_barysh")
+                .setPositiveButton("ОК", null)
+                .show()
         }
     }
 
