@@ -312,25 +312,7 @@ class MainActivity : AppCompatActivity() {
         // ЗАПРАШИВАЕМ РАЗРЕШЕНИЕ НА ИСПОЛЬЗОВАНИЕ ГЕОПОЗИЦИИ
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
 
-//        userLocationLayer.setObjectListener(object : UserLocationObjectListener {
-//            override fun onObjectAdded(userLocationView: UserLocationView) {
-//                // Меняем иконку стрелки (движение)
-//                userLocationView.arrow.setIcon(
-//                    ImageProvider.fromResource(this@MainActivity, R.drawable.ic_plus)
-//                )
-//
-//                // Меняем иконку метки (центр)
-//                userLocationView.pin.setIcon(
-//                    ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
-//                )
-//
-//                // Меняем стиль круга точности
-//                userLocationView.accuracyCircle.fillColor = Color.argb(100, 0, 100, 255)
-//            }
-//
-//            override fun onObjectUpdated(view: UserLocationView, event: ObjectEvent) {}
-//            override fun onObjectRemoved(view: UserLocationView) {}
-//        })
+
 
         // СОЗДАНИЕ КОЛЛЕКЦИИ
         collection = map.mapObjects.addCollection()
@@ -513,6 +495,20 @@ class MainActivity : AppCompatActivity() {
             val mapKit = MapKitFactory.getInstance()
             userLocationLayer = mapKit.createUserLocationLayer(mapView.mapWindow)
             userLocationLayer.isVisible = true
+            userLocationLayer.setObjectListener(object : UserLocationObjectListener {
+                override fun onObjectAdded(userLocationView: UserLocationView) {
+                    // Меняем иконку метки (центр)
+                    userLocationView.pin.setIcon(
+                        ImageProvider.fromResource(this@MainActivity, R.drawable.ic_dot)
+                    )
+
+                    // Меняем стиль круга точности
+                    userLocationView.accuracyCircle.fillColor = Color.argb(50, 0, 100, 255)
+                }
+
+                override fun onObjectUpdated(view: UserLocationView, event: ObjectEvent) {}
+                override fun onObjectRemoved(view: UserLocationView) {}
+            })
         }
     }
 
