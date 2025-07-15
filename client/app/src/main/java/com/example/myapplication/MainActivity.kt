@@ -58,6 +58,9 @@ import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.credentials.exceptions.domerrors.NetworkError
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.RequestPointType
@@ -88,8 +91,12 @@ import com.yandex.mapkit.directions.driving.DrivingSession.DrivingRouteListener
 import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.map.IconStyle
 import com.yandex.mapkit.map.InputListener
+import com.yandex.mapkit.map.MapObject
 import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.runtime.Error
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import org.w3c.dom.Text
 import kotlin.collections.emptyList
 
@@ -120,6 +127,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var closeSearchButton: ImageView
     private lateinit var findButton: ImageButton
     private lateinit var bottomSheet: LinearLayout
+    private lateinit var suggestionAdapter: ParkingSuggestionAdapter
+    private lateinit var parkingRecyclerView: RecyclerView
+
+    private val placemarkMap = mutableMapOf<Long, PlacemarkMapObject>()
 
     fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
         Toast.makeText(this, message, duration).show()
@@ -137,38 +148,7 @@ class MainActivity : AppCompatActivity() {
             null
         )
 
-
-        if (mapObject is PlacemarkMapObject) {
-            val parking = mapObject.userData as? ParkingSpot
-            parking?.let {
-                selectedParkingId = it.id
-                parkingTitle.text = it.name
-                parkingAddress.text = it.address
-                parkingCapacity.text = "Всего мест: " + it.capacity
-                parkingDisabled.text = "Инвалидных мест: " + it.capacity_disabled
-                parkingFreeSpaces.text = "Свободных мест: " + it.free_spaces
-                parkingDetails.text = it.parking_zone_number
-                lifecycleScope.launch {
-                    try{
-                        val tariff = ApiClient.parkingApi.getTariff(selectedParkingId)
-                        parkingTariff.text = "Стоимость в час: ${tariff.hour_price} руб"
-                    }catch (e: Exception){
-                        showToast("${e.localizedMessage}")
-                    }
-                }
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-            }
-
-            val bookButton = findViewById<Button>(R.id.book_button)
-            bookButton.setOnClickListener {
-                showDateTimePickerForBooking(selectedParkingId!!)
-            }
-
-            val routeButton = findViewById<Button>(R.id.route_button)
-            routeButton.setOnClickListener {
-                makeRoute(parking!!)
-            }
-        }
+        showBottomSheet(mapObject)
         true
     }
 
@@ -264,6 +244,34 @@ class MainActivity : AppCompatActivity() {
         closeSearchButton = findViewById(R.id.closeSearch)
         findButton = findViewById(R.id.findButton)
         bottomSheet = findViewById(R.id.bottom_sheet)
+        parkingRecyclerView = findViewById(R.id.parkingRecyclerView)
+
+        // Инициализация RecyclerView
+        suggestionAdapter = ParkingSuggestionAdapter { parking ->
+            mapView.mapWindow.map.move(
+                CameraPosition(
+                    Point(parking.lat, parking.lon),
+                    16.0f,
+                    0f, 0f
+                ),
+                Animation(Animation.Type.SMOOTH, 0.5f),
+                null
+            )
+
+            closeSearch()
+
+            val imageProvider = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pinned)
+            placemarkMap[parking.id]?.setIcon(imageProvider)
+            showBottomSheet(placemarkMap[parking.id]!!)
+
+        }
+        parkingRecyclerView.adapter = suggestionAdapter
+
+        parkingRecyclerView.layoutManager = LinearLayoutManager(this)
+
+        parkingRecyclerView.addItemDecoration(
+            DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
+        )
 
         // Получаем MapView и настраиваем камеру (центр и зум)
         mapView = findViewById(R.id.mapview)
@@ -330,14 +338,14 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try{
                 val parkings = ParkingRepository.getParkings()
-                val imageProvider = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
+                val imageProvider = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_parking)
                 parkings.forEach { p ->
-                    clasterizedCollection.addPlacemark(Point(p.lat, p.lon)).apply {
+                    val placemark = clasterizedCollection.addPlacemark(Point(p.lat, p.lon)).apply {
                         setIcon(imageProvider)
                         userData = p
                         addTapListener(placemarkTapListener)
                     }
-
+                    placemarkMap[p.id] = placemark
                 }
                 clasterizedCollection.clusterPlacemarks(CLUSTER_RADIUS, MIN_ZOOM)
             }catch (e: Exception){
@@ -425,14 +433,26 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Обработчик для поиска
-        searchEditText.addTextChangedListener(object: TextWatcher{
+        // TextWatcher для поиска
+        searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
             override fun afterTextChanged(s: Editable?) {
-                // Здесь ты получаешь текст, который был введен в EditText
-                showToast("Текст поиска: ${s.toString()}")
+                lifecycleScope.launch {
+                    try {
+                        val searchQuery = s.toString()
+                        val parkings = ParkingRepository.searchParkings(searchQuery)
+                        updateParkingList(parkings)
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Ошибка: ${e.localizedMessage}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
         })
     }
@@ -608,6 +628,7 @@ class MainActivity : AppCompatActivity() {
             showToast("Геопозиция не определена")
         }
     }
+    
     private fun onRoutePointsUpdated() {
         placemarksCollection.clear()
 
@@ -617,12 +638,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val imageProvider = ImageProvider.fromResource(this, R.drawable.bullet)
+        val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pinned)
         routePoints.forEach {
             placemarksCollection.addPlacemark().apply {
                 geometry = it
                 setIcon(imageProvider, IconStyle().apply {
-                    scale = 0.5f
                     zIndex = 20f
                 })
             }
@@ -683,9 +703,13 @@ class MainActivity : AppCompatActivity() {
     // Функция для открытия строки поиска с анимацией
     private fun openSearch() {
         searchLayout.visibility = View.VISIBLE
-        val transition = ObjectAnimator.ofFloat(searchLayout, "translationY", -300f, 0f)
-        transition.duration = 400
-        transition.start()
+        parkingRecyclerView.visibility = View.VISIBLE
+        val transitionLayout = ObjectAnimator.ofFloat(searchLayout, "translationY", -300f, 0f)
+        val transitionRecycler = ObjectAnimator.ofFloat(parkingRecyclerView, "translationY", -1200f, 0f)
+        transitionLayout.duration = 400
+        transitionLayout.start()
+        transitionRecycler.duration = 400
+        transitionRecycler.start()
 
         searchEditText.requestFocus()
 
@@ -699,14 +723,75 @@ class MainActivity : AppCompatActivity() {
         val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(searchEditText.windowToken, 0)
 
-        val transition = ObjectAnimator.ofFloat(searchLayout, "translationY", 0f, -300f)
-        transition.duration = 400
-        transition.addListener(object : AnimatorListenerAdapter() {
+        val transitionLayout = ObjectAnimator.ofFloat(searchLayout, "translationY", 0f, -300f)
+        val transitionRecycler = ObjectAnimator.ofFloat(parkingRecyclerView, "translationY", 0f, -1200f)
+        transitionRecycler.duration = 400
+        transitionLayout.duration = 400
+        transitionLayout.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
                 searchLayout.visibility = View.GONE
             }
         })
-        transition.start()
+        transitionRecycler.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                parkingRecyclerView.visibility = View.GONE
+            }
+        })
+        transitionLayout.start()
+        transitionRecycler.start()
     }
 
+    private fun updateParkingList(parkings: List<ParkingSpot>) {
+        suggestionAdapter.submitList(parkings)
+    }
+
+    private fun showBottomSheet(mapObject: MapObject){
+        val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pinned)
+        if (mapObject is PlacemarkMapObject) {
+            mapObject.setIcon(imageProvider)
+            val parking = mapObject.userData as? ParkingSpot
+            parking?.let {
+                selectedParkingId = it.id
+                parkingTitle.text = it.name
+                parkingAddress.text = it.address
+                parkingCapacity.text = "Всего мест: " + it.capacity
+                parkingDisabled.text = "Инвалидных мест: " + it.capacity_disabled
+                parkingFreeSpaces.text = "Свободных мест: " + it.free_spaces
+                parkingDetails.text = it.parking_zone_number
+                lifecycleScope.launch {
+                    try{
+                        val tariff = ApiClient.parkingApi.getTariff(selectedParkingId)
+                        parkingTariff.text = "Стоимость в час: ${tariff.hour_price} руб"
+                    }catch (e: Exception){
+                        showToast("${e.localizedMessage}")
+                    }
+                }
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+
+            bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+                    if (newState == BottomSheetBehavior.STATE_HIDDEN || newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                        // Сбросить иконку
+                        val imageProvider = ImageProvider.fromResource(this@MainActivity, R.drawable.ic_parking)
+                        placemarkMap[parking?.id]?.setIcon(imageProvider)
+                    }
+                }
+
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                    // не нужен
+                }
+            })
+
+            val bookButton = findViewById<Button>(R.id.book_button)
+            bookButton.setOnClickListener {
+                showDateTimePickerForBooking(selectedParkingId!!)
+            }
+
+            val routeButton = findViewById<Button>(R.id.route_button)
+            routeButton.setOnClickListener {
+                makeRoute(parking!!)
+            }
+        }
+    }
 }

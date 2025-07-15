@@ -9,6 +9,7 @@ import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ParkingApi {
     @GET("/parkings")
@@ -18,6 +19,14 @@ interface ParkingApi {
     suspend fun getTariff(
         @Path("parking_id") parkingId: Long?
     ): Tariff
+
+    @GET("/parkings/suggest")
+    suspend fun suggestParkings(
+        @Query("q") query: String,
+        @Query("lat") lat: Double?,
+        @Query("lon") lon: Double?,
+        @Query("limit") limit: Int
+    ): List<ParkingSuggest>
 
     @POST("bookings")
     suspend fun createBooking(

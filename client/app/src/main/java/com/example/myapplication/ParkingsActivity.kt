@@ -1,9 +1,18 @@
 package com.example.myapplication
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
+import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -19,11 +28,25 @@ class ParkingsActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ParkingAdapter
+    private lateinit var backButton: ImageButton
+    private lateinit var findButton: ImageButton
+    private lateinit var closeButton: ImageView
+    private lateinit var parkingLabel: TextView
+    private lateinit var searchEditText: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_parkings)
+
+        parkingLabel = findViewById(R.id.parkingLabel)
+        backButton = findViewById(R.id.backButton)
+        findButton = findViewById(R.id.findButton)
+        closeButton = findViewById(R.id.closeSearch)
+        searchEditText = findViewById(R.id.searchEditText)
+
+        searchEditText.visibility = View.GONE
+        closeButton.visibility = View.GONE
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -50,9 +73,58 @@ class ParkingsActivity : AppCompatActivity() {
             }
         }
 
-        val bckBtn = findViewById<ImageButton>(R.id.backButton)
-        bckBtn.setOnClickListener {
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                lifecycleScope.launch {
+                    try {
+                        val searchQuery = s.toString()
+                        val parkings = ParkingRepository.searchParkings(searchQuery)
+                        adapter = ParkingAdapter(parkings) { spot ->
+                            Toast.makeText(this@ParkingsActivity, "Выбрана: ${spot.name}",
+                                Toast.LENGTH_SHORT).show()
+                        }
+                        recyclerView.adapter = adapter
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            this@ParkingsActivity,
+                            "Ошибка: ${e.localizedMessage}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        })
+
+        backButton.setOnClickListener {
             finish()
+        }
+
+        findButton.setOnClickListener {
+            parkingLabel.visibility = View.GONE
+            searchEditText.visibility = View.VISIBLE
+
+            // Устанавливаем фокус на EditText
+            searchEditText.requestFocus()
+
+            val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            inputMethodManager.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT)
+            findButton.visibility = View.GONE
+            closeButton.visibility = View.VISIBLE
+        }
+
+        closeButton.setOnClickListener {
+            val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            inputMethodManager.hideSoftInputFromWindow(searchEditText.windowToken, 0)
+
+            parkingLabel.visibility = View.VISIBLE
+            searchEditText.visibility = View.GONE
+
+            findButton.visibility = View.VISIBLE
+            closeButton.visibility = View.GONE
         }
     }
 }
