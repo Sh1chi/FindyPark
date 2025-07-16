@@ -25,14 +25,12 @@ import com.google.firebase.auth.ActionCodeSettings
 import kotlinx.coroutines.withContext
 
 class RegistrationActivity : AppCompatActivity() {
-
     private lateinit var auth: FirebaseAuth
-
     private lateinit var btnForgotPassword: Button
-
-    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-        Toast.makeText(this, message, duration).show()
-    }
+    private lateinit var btnRegister: Button
+    private lateinit var btnLogin: Button
+    private lateinit var etEmail: EditText
+    private lateinit var etPassword: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,16 +38,16 @@ class RegistrationActivity : AppCompatActivity() {
 
         auth = Firebase.auth
 
-        val etEmail = findViewById<EditText>(R.id.etEmail)
-        val etPassword = findViewById<EditText>(R.id.etPassword)
-        val btnRegister = findViewById<Button>(R.id.btnRegister)
-        val btnLogin = findViewById<Button>(R.id.btnLogin)
-        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
-        val tvError = findViewById<TextView>(R.id.tvError)
+        // Инициализация элементов UI
+
+        etEmail = findViewById(R.id.etEmail)
+        etPassword = findViewById(R.id.etPassword)
+        btnRegister = findViewById(R.id.btnRegister)
+        btnLogin = findViewById(R.id.btnLogin)
         btnForgotPassword = findViewById(R.id.btnForgotPassword)
 
+        // Обработчики кнопок
 
-        // Регистрация по Email/Password
         btnRegister.setOnClickListener {
             val email = etEmail.text.toString()
             val password = etPassword.text.toString()
@@ -109,5 +107,9 @@ class RegistrationActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
     }
 }

@@ -34,23 +34,18 @@ class ParkingsActivity : AppCompatActivity() {
     private lateinit var parkingLabel: TextView
     private lateinit var searchEditText: EditText
 
-    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-        Toast.makeText(this, message, duration).show()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_parkings)
+
+        // Инициализация элементов UI
 
         parkingLabel = findViewById(R.id.parkingLabel)
         backButton = findViewById(R.id.backButton)
         findButton = findViewById(R.id.findButton)
         closeButton = findViewById(R.id.closeSearch)
         searchEditText = findViewById(R.id.searchEditText)
-
-        searchEditText.visibility = View.GONE
-        closeButton.visibility = View.GONE
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -64,6 +59,9 @@ class ParkingsActivity : AppCompatActivity() {
             insets
         }
 
+        searchEditText.visibility = View.GONE
+        closeButton.visibility = View.GONE
+
         lifecycleScope.launch {
             try {
                 val parkings = ParkingRepository.getParkings()
@@ -76,6 +74,7 @@ class ParkingsActivity : AppCompatActivity() {
             }
         }
 
+        // Обработчик поисковой строки
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
@@ -96,6 +95,8 @@ class ParkingsActivity : AppCompatActivity() {
                 }
             }
         })
+
+        // Обработчики кнопок
 
         backButton.setOnClickListener {
             finish()
@@ -124,5 +125,9 @@ class ParkingsActivity : AppCompatActivity() {
             findButton.visibility = View.VISIBLE
             closeButton.visibility = View.GONE
         }
+    }
+
+    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
     }
 }

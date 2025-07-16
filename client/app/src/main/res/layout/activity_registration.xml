@@ -103,21 +103,4 @@
         android:text="Забыли пароль?"
         android:textColor="@android:color/holo_blue_dark" />
 
-    <!-- Прогресс-бар -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone" />
-
-    <!-- Сообщения об ошибках -->
-    <TextView
-        android:id="@+id/tvError"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textAlignment="center"
-        android:textColor="@android:color/holo_red_dark"
-        android:visibility="gone" />
-
 </LinearLayout>

@@ -1,5 +1,7 @@
 package com.example.myapplication
 
+import com.example.myapplication.API.ApiClient
+import com.example.myapplication.models.ParkingSpot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -26,7 +28,6 @@ object ParkingRepository {
         cachedParkings = null
     }
 
-    // Функция поиска по кэшированным данным
     suspend fun searchParkings(query: String): List<ParkingSpot> {
         if (cachedParkings == null) {
             // Если кэш пуст, загружаем данные с сервера

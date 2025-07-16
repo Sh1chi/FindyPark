@@ -18,8 +18,9 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import com.example.myapplication.API.ApiClient
+import com.example.myapplication.models.UserUpdate
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
@@ -27,23 +28,29 @@ import kotlinx.coroutines.tasks.await
 
 class ProfileActivity : AppCompatActivity() {
 
-    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-        Toast.makeText(this, message, duration).show()
-    }
-
+    private lateinit var loginTextView: TextView
+    private lateinit var nameTextView: TextView
+    private lateinit var phoneTextView: TextView
+    private lateinit var vehicleTextView: TextView
+    private lateinit var plateTextView: TextView
+    private lateinit var exitTextView: TextView
+    private lateinit var backButton: ImageButton
+    private lateinit var loadingScreen: FrameLayout
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_profile)
 
-        val backButton = findViewById<ImageButton>(R.id.backButton)
-        val loginTextView = findViewById<TextView>(R.id.user_login)
-        val nameTextView = findViewById<TextView>(R.id.user_name)
-        val phoneTextView = findViewById<TextView>(R.id.user_phone)
-        val vehicleTextView = findViewById<TextView>(R.id.user_vehicle)
-        val plateTextView = findViewById<TextView>(R.id.user_plate)
-        val exitTextView = findViewById<TextView>(R.id.user_exit)
-        val loadingScreen = findViewById<FrameLayout>(R.id.loadingScreen)
+        // Инициализация элементов UI
+
+        loginTextView = findViewById(R.id.user_login)
+        nameTextView = findViewById(R.id.user_name)
+        phoneTextView = findViewById(R.id.user_phone)
+        vehicleTextView = findViewById(R.id.user_vehicle)
+        plateTextView = findViewById(R.id.user_plate)
+        exitTextView = findViewById(R.id.user_exit)
+        backButton = findViewById(R.id.backButton)
+        loadingScreen = findViewById(R.id.loadingScreen)
 
         var idToken: String? = null
 
@@ -81,12 +88,12 @@ class ProfileActivity : AppCompatActivity() {
                 showToast("Ошибка загрузки профиля: ${e.localizedMessage}")
             }
 
-            loadingScreen.visibility = View.GONE // Скрыть в случае ошибки
+            loadingScreen.visibility = View.GONE
         }
 
-        // Кнопка "назад"
+        // Обработчики элементов UI
         backButton.setOnClickListener {
-            finish() // Закрываем меню
+            finish()
         }
 
         nameTextView.setOnClickListener {
@@ -141,10 +148,8 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         vehicleTextView.setOnClickListener {
-            // Список опций
             val countries = arrayOf("Легковой автомобиль", "Грузовой автомобиль", "Мотоцикл")
 
-            // Создаём Spinner
             val spinner = Spinner(this).apply {
                 adapter = ArrayAdapter(
                     this@ProfileActivity,
@@ -186,10 +191,7 @@ class ProfileActivity : AppCompatActivity() {
                 inputType = InputType.TYPE_CLASS_TEXT
             }
 
-            // TextWatcher для перевода в заглавные
             editText.addTextChangedListener(object : TextWatcher {
-                private var previousText = ""
-
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
@@ -233,5 +235,9 @@ class ProfileActivity : AppCompatActivity() {
             finish()
         }
 
+    }
+
+    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
     }
 }
