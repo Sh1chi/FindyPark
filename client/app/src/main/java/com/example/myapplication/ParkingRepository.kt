@@ -25,4 +25,18 @@ object ParkingRepository {
     fun clearCache() {
         cachedParkings = null
     }
+
+    // Функция поиска по кэшированным данным
+    suspend fun searchParkings(query: String): List<ParkingSpot> {
+        if (cachedParkings == null) {
+            // Если кэш пуст, загружаем данные с сервера
+            getParkings()
+        }
+
+        // Фильтруем парковки по имени или адресу (или другим параметрам)
+        return cachedParkings?.filter {
+            it.address.contains(query, ignoreCase = true) ||
+                    it.name.contains(query, ignoreCase = true)
+        } ?: emptyList()
+    }
 }

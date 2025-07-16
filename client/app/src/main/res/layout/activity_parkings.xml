@@ -16,23 +16,56 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingConstraints"
         tools:layout_editor_absoluteX="0dp"
-        tools:ignore="MissingConstraints">
+        android:weightSum="10">
 
         <ImageButton
             android:id="@+id/backButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_weight="1"
             android:background="@drawable/back_button_ripple"
-            app:tint="@color/dark_green"
-            android:src="@drawable/ic_back" />
+            android:src="@drawable/ic_back"
+            app:tint="@color/dark_green" />
 
         <TextView
             android:id="@+id/parkingLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/parking_list"
-            android:textSize="30sp" />
+            android:layout_weight="8"
+            android:text="@string/parkings"
+            android:textSize="30sp"/>
+
+        <EditText
+            android:id="@+id/searchEditText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="8"
+            android:textSize="20sp"
+            android:hint="Поиск парковок"
+            android:inputType="text"
+            android:visibility="gone"/>
+
+        <ImageButton
+            android:id="@+id/findButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:background="@drawable/back_button_ripple"
+            android:contentDescription="Найти"
+            android:src="@drawable/ic_finder"
+            app:tint="@color/dark_green" />
+
+        <ImageView
+            android:id="@+id/closeSearch"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:tint="@color/dark_green"
+            android:layout_weight="1"
+            android:contentDescription="Закрыть поиск"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:visibility="gone"/>
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

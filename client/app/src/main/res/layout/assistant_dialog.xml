@@ -5,17 +5,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@android:color/white">
+    android:padding="16dp">
+
+    <!-- Полоса для смахивания -->
+    <View
+        android:id="@+id/drag_handle"
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/drag_handle_shape" />
 
     <!-- Заголовок -->
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Парковочный ассистент"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:paddingBottom="8dp"/>
+        android:text="@string/parking_assistant"
+        android:textSize="20sp"
+        android:padding="8dp"
+        android:layout_marginBottom="16dp"/>
 
     <!-- Область сообщений -->
     <ScrollView
@@ -29,8 +37,7 @@
             android:id="@+id/chatContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="8dp"/>
+            android:orientation="vertical"/>
     </ScrollView>
 
     <!-- Прогресс бар (скрыт по умолчанию) -->
@@ -62,6 +69,6 @@
             android:id="@+id/sendButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Отправить"/>
+            android:text="@string/send"/>
     </LinearLayout>
 </LinearLayout>

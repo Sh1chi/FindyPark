@@ -3,12 +3,13 @@
 
     <style name="Base.Theme.MyApplication" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <item name="colorPrimary">@color/dark_green</item>
+        <item name="colorPrimary">@color/my_color_primary</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:colorBackground">@color/main_bg</item>
         <item name="android:fontFamily">@font/russo_one</item>
-        <item name="android:textColor">@color/dark_green</item>
-        <item name="colorLoadingOverlay">#FFFFFF</item>
+        <item name="android:textColor">@color/font</item>
+        <item name="colorLoadingOverlay">@color/main_bg</item>
     </style>
 
     <style name="Theme.MyApplication" parent="Base.Theme.MyApplication" />
