@@ -10,7 +10,9 @@ from app.core.config import get_settings
 from app.schemas.parking_schema import Parking
 from app.db import async_session
 from app.services.tariff_service import upsert_tariffs
+import json
 
+# Конфигурация
 DATASET_ID = 623
 ROWS_URL = f"https://apidata.mos.ru/v1/datasets/{DATASET_ID}/rows"
 
@@ -96,15 +98,16 @@ async def _safe_get(client: httpx.AsyncClient, params: dict) -> Optional[list]:
     """
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            resp = await client.get(ROWS_URL, params=params)
+            resp = await client.get(ROWS_URL, params=params, timeout=REQUEST_TIMEOUT)
             resp.raise_for_status()
             return resp.json()
         except (httpx.ReadTimeout, httpx.ConnectTimeout):
-            log.warning("Timeout %s/%s → wait %ss", attempt, MAX_RETRIES, RETRY_DELAY)
+            log.warning(f"Timeout {attempt}/{MAX_RETRIES}, retrying in {RETRY_DELAY}s")
+            await asyncio.sleep(RETRY_DELAY)
         except httpx.HTTPStatusError as e:
-            code = e.response.status_code
-            if code == 429 or 500 <= code < 600:
-                log.warning("HTTP %s %s/%s → wait %ss", code, attempt, MAX_RETRIES, RETRY_DELAY)
+            if e.response.status_code == 429 or 500 <= e.response.status_code < 600:
+                log.warning(f"HTTP {e.response.status_code} {attempt}/{MAX_RETRIES}, retrying")
+                await asyncio.sleep(RETRY_DELAY)
             else:
                 raise   # Прерываем попытки на других ошибках
         await asyncio.sleep(RETRY_DELAY)
@@ -121,6 +124,16 @@ async def _fetch_all() -> List[Tuple[Parking, list]]:
     Raises:
         RuntimeError: Если страница не была загружена после повторных попыток.
     """
+    if IS_TEST:
+        log.info("Running in TEST mode (limit: %d parkings)", MAX_TOTAL)
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+            batch = await _safe_get(client, {
+                "$top": MAX_TOTAL,
+                "$skip": 0,
+                "api_key": settings.data_mos_token,
+            })
+            return [p for row in (batch or [])[:MAX_TOTAL] if (p := _map_row(row))]
+
     results: List[Tuple[Parking, list]] = []
     skip = 0
 

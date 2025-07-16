@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myapplication.databinding.ItemParkingSearchBinding
+import com.example.myapplication.models.ParkingSpot
 
 class ParkingSuggestionAdapter( private val onItemClick: (ParkingSpot) -> Unit) :
     ListAdapter<ParkingSpot, ParkingViewHolder>(ParkingDiffCallback()) {

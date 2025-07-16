@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.myapplication.models.ParkingSpot
 
 class ParkingAdapter(
     private val data: List<ParkingSpot>,
@@ -22,7 +23,6 @@ class ParkingAdapter(
             tvAddress.text = item.address
             tvTotal.text = "Мест всего: ${item.capacity ?: "неизвестно"}"
             tvFree.text  = "Мест свободно: ${item.free_spaces ?: "неизвестно"}"
-
         }
     }
 

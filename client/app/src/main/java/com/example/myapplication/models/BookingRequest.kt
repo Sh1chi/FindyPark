@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.models
 
 data class BookingRequest(
     val parking_id: Long,
