@@ -20,7 +20,7 @@
         tools:ignore="MissingConstraints">
 
         <ImageButton
-            android:id="@+id/backButton"
+            android:id="@+id/back_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/back_button_ripple"
@@ -28,11 +28,79 @@
             android:src="@drawable/ic_back" />
 
         <TextView
-            android:id="@+id/aboutLabel"
+            android:id="@+id/about_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/about_app"
             android:textSize="30sp" />
+    </LinearLayout>
+
+    <!-- Список пунктов меню -->
+    <LinearLayout
+        android:id="@+id/menuItemsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Парковки -->
+        <TextView
+            android:id="@+id/about_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textSize="20sp"
+            android:paddingVertical="18dp"
+            android:paddingHorizontal="12dp"
+            android:background="?android:selectableItemBackground"/>
+
+        <!-- Версия -->
+        <TextView
+            android:id="@+id/about_version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:paddingVertical="18dp"
+            android:paddingHorizontal="12dp"
+            android:background="?android:selectableItemBackground"/>
+
+        <!-- Версия -->
+        <TextView
+            android:id="@+id/about_company"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:text="@string/company_name"
+            android:paddingVertical="18dp"
+            android:paddingHorizontal="12dp"
+            android:background="?android:selectableItemBackground"/>
+
+        <!-- Условия яндекса -->
+        <TextView
+            android:id="@+id/about_yandex"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/yandex"
+            android:textSize="18sp"
+            android:paddingVertical="10dp"
+            android:paddingHorizontal="12dp"
+            android:textColor="@color/blue_500"
+            android:background="?android:selectableItemBackground"/>
+
+        <!-- Тех.поддержка -->
+        <TextView
+            android:id="@+id/about_support"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/text_support"
+            android:textSize="18sp"
+            android:paddingVertical="10dp"
+            android:paddingHorizontal="12dp"
+            android:textColor="@color/blue_500"
+            android:background="?android:selectableItemBackground"/>
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

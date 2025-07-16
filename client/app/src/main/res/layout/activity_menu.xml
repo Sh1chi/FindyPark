@@ -44,70 +44,72 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Логин пользователя -->
+        <!-- Профиль пользователя -->
         <TextView
             android:id="@+id/menu_user"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Профиль пользователя"
+            android:text="@string/profile_page"
             android:textSize="20sp"
             android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
-        <!-- Пример пункта меню -->
+        <!-- Разделительная черта -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#DDDDDD" />
 
+        <!-- Парковки -->
         <TextView
             android:id="@+id/menu_parking"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Парковки"
+            android:text="@string/parkings"
             android:textSize="20sp"
             android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
-        <!-- Настройки -->
+        <!-- Разделительная черта -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#DDDDDD" />
 
+        <!-- Настройки -->
         <TextView
             android:id="@+id/menu_settings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Настройки"
+            android:text="@string/settings"
             android:textSize="20sp"
             android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
-        <!-- О приложении -->
+        <!-- Разделительная черта -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#DDDDDD" />
 
+        <!-- О приложении -->
         <TextView
             android:id="@+id/menu_about"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="О приложении"
+            android:text="@string/about_app"
             android:textSize="20sp"
             android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground"/>
 
+        <!-- Разделительная черта -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#DDDDDD" />
-
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

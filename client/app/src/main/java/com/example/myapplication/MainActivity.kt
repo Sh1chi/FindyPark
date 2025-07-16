@@ -1,6 +1,5 @@
 package com.example.myapplication
 
-import ClusterView
 import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
@@ -156,13 +155,8 @@ class MainActivity : AppCompatActivity() {
 
     // ClusterListener
     private val clusterListener = ClusterListener { cluster ->
-        cluster.appearance.setView(
-            ViewProvider(
-                ClusterView(this).apply {
-                    setText("${cluster.placemarks.size}")
-                }
-            )
-        )
+        val clusterIcon = ImageProvider.fromResource(this, R.drawable.vehicle)
+        cluster.appearance.setIcon(clusterIcon)
         cluster.appearance.zIndex = 100f
 
         cluster.addClusterTapListener(clusterTapListener)
@@ -180,7 +174,6 @@ class MainActivity : AppCompatActivity() {
             Animation(Animation.Type.SMOOTH, 0.5f),
             null
         )
-        showToast("Clicked on cluster with ${tappedCluster.size} items")
         true
     }
 
@@ -200,8 +193,8 @@ class MainActivity : AppCompatActivity() {
 
         override fun onDrivingRoutesError(error: Error) {
             when (error) {
-                is NetworkError -> showToast("Routes request error due network issues")
-                else -> showToast("Routes request unknown error")
+                is NetworkError -> showToast("Невозможно построить маршрут из-за сетевых неполадок")
+                else -> showToast("Неизвестная ошибка построения маршрута")
             }
         }
     }
@@ -312,25 +305,7 @@ class MainActivity : AppCompatActivity() {
         // ЗАПРАШИВАЕМ РАЗРЕШЕНИЕ НА ИСПОЛЬЗОВАНИЕ ГЕОПОЗИЦИИ
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
 
-//        userLocationLayer.setObjectListener(object : UserLocationObjectListener {
-//            override fun onObjectAdded(userLocationView: UserLocationView) {
-//                // Меняем иконку стрелки (движение)
-//                userLocationView.arrow.setIcon(
-//                    ImageProvider.fromResource(this@MainActivity, R.drawable.ic_plus)
-//                )
-//
-//                // Меняем иконку метки (центр)
-//                userLocationView.pin.setIcon(
-//                    ImageProvider.fromResource(this@MainActivity, R.drawable.ic_pin)
-//                )
-//
-//                // Меняем стиль круга точности
-//                userLocationView.accuracyCircle.fillColor = Color.argb(100, 0, 100, 255)
-//            }
-//
-//            override fun onObjectUpdated(view: UserLocationView, event: ObjectEvent) {}
-//            override fun onObjectRemoved(view: UserLocationView) {}
-//        })
+
 
         // СОЗДАНИЕ КОЛЛЕКЦИИ
         collection = map.mapObjects.addCollection()
@@ -418,7 +393,7 @@ class MainActivity : AppCompatActivity() {
 
         delRouteButton.setOnClickListener {
             if (routePoints.isEmpty()){
-                showToast("Нет пути, для удаления")
+                showToast("Нет пути для удаления")
             }
             else {
                 routePoints = emptyList()
@@ -513,6 +488,20 @@ class MainActivity : AppCompatActivity() {
             val mapKit = MapKitFactory.getInstance()
             userLocationLayer = mapKit.createUserLocationLayer(mapView.mapWindow)
             userLocationLayer.isVisible = true
+            userLocationLayer.setObjectListener(object : UserLocationObjectListener {
+                override fun onObjectAdded(userLocationView: UserLocationView) {
+                    // Меняем иконку метки (центр)
+                    userLocationView.pin.setIcon(
+                        ImageProvider.fromResource(this@MainActivity, R.drawable.ic_dot)
+                    )
+
+                    // Меняем стиль круга точности
+                    userLocationView.accuracyCircle.fillColor = Color.argb(50, 0, 100, 255)
+                }
+
+                override fun onObjectUpdated(view: UserLocationView, event: ObjectEvent) {}
+                override fun onObjectRemoved(view: UserLocationView) {}
+            })
         }
     }
 
@@ -533,7 +522,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Проверка: нельзя раньше текущего момента
                 if (tsFrom.before(now)) {
-                    showToast("Нельзя выбрать время в прошлом")
+                    showToast("Ошибка выбора времени. Попробуйте еще раз")
                     return@TimePickerDialog
                 }
 
@@ -596,10 +585,12 @@ class MainActivity : AppCompatActivity() {
                 return@launch
             }
 
+            val currUser = ApiClient.parkingApi.getCurrUser("Bearer $token")
+
             val booking = BookingRequest(
                 parking_id = id,
-                vehicle_type = "car",
-                plate = "brbr patapim",
+                vehicle_type = currUser.vehicle_type,
+                plate = currUser.plate,
                 ts_from = startDateTime,
                 ts_to = endDateTime
             )
@@ -780,7 +771,7 @@ class MainActivity : AppCompatActivity() {
                         val tariff = ApiClient.parkingApi.getTariff(selectedParkingId)
                         parkingTariff.text = "Стоимость в час: ${tariff.hour_price} руб"
                     }catch (e: Exception){
-                        showToast("${e.localizedMessage}")
+                        showToast("Ошибка получения данных о тарифе: ${e.localizedMessage}")
                     }
                 }
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
