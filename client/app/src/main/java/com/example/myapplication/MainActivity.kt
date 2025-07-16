@@ -18,8 +18,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
-import android.util.Log.d
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -31,10 +29,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.GravityCompat
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -45,25 +40,21 @@ import com.yandex.mapkit.map.ClusterListener
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.image.ImageProvider
-import com.yandex.runtime.ui_view.ViewProvider
 import kotlinx.coroutines.launch
-import com.yandex.mapkit.map.CameraListener
 import com.yandex.mapkit.map.CameraPosition
-import com.yandex.mapkit.map.CameraUpdateReason
 import com.yandex.mapkit.map.ClusterizedPlacemarkCollection
 import com.yandex.mapkit.map.Map
-import kotlinx.coroutines.GlobalScope
-import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
-import androidx.core.widget.addTextChangedListener
 import androidx.credentials.exceptions.domerrors.NetworkError
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.myapplication.API.ApiClient
+import com.example.myapplication.models.BookingRequest
+import com.example.myapplication.models.ParkingSpot
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.RequestPointType
-import com.yandex.mapkit.UserData
 import com.yandex.mapkit.layers.ObjectEvent
 import com.yandex.mapkit.map.ClusterTapListener
 import com.yandex.mapkit.map.MapObjectCollection
@@ -71,14 +62,7 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
 import java.util.Locale
 import com.yandex.mapkit.directions.DirectionsFactory
 import com.yandex.mapkit.directions.driving.DrivingOptions
@@ -89,14 +73,9 @@ import com.yandex.mapkit.directions.driving.DrivingSession
 import com.yandex.mapkit.directions.driving.DrivingSession.DrivingRouteListener
 import com.yandex.mapkit.directions.driving.VehicleOptions
 import com.yandex.mapkit.map.IconStyle
-import com.yandex.mapkit.map.InputListener
 import com.yandex.mapkit.map.MapObject
 import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.runtime.Error
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import org.w3c.dom.Text
 import kotlin.collections.emptyList
 
 // Объявляем глобальные переменные для карты
@@ -159,7 +138,7 @@ class MainActivity : AppCompatActivity() {
 
     // ClusterListener
     private val clusterListener = ClusterListener { cluster ->
-        val clusterIcon = ImageProvider.fromResource(this, R.drawable.vehicle)
+        val clusterIcon = ImageProvider.fromResource(this, R.drawable.ic_cluster)
         cluster.appearance.setIcon(clusterIcon)
         cluster.appearance.zIndex = 100f
 
@@ -299,7 +278,7 @@ class MainActivity : AppCompatActivity() {
         parkingRecyclerView.addItemDecoration(
             DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
         )
-        
+
         // Создание маршрутизатора
 
         drivingRouter = DirectionsFactory.getInstance().createDrivingRouter(DrivingRouterType.COMBINED)

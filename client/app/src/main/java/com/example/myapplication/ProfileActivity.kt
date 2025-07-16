@@ -18,11 +18,11 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import com.example.myapplication.API.ApiClient
+import com.example.myapplication.models.UserUpdate
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.yandex.runtime.image.Frame
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 

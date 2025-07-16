@@ -1,5 +1,7 @@
 package com.example.myapplication
 
+import com.example.myapplication.API.ApiClient
+import com.example.myapplication.models.ParkingSpot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
