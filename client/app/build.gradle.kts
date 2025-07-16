@@ -5,6 +5,7 @@ plugins {
     // Firebase
     id("com.google.gms.google-services")
      // импорт напрямую
+    id("kotlin-parcelize")
 }
 
 android {
@@ -61,7 +62,7 @@ dependencies {
     // Облегченная библиотека, содержит только карту, слой пробок,
     // LocationManager, UserLocationLayer
     // и возможность скачивать офлайн-карты (только в платной версии).
-    implementation("com.yandex.android:maps.mobile:4.17.0-lite")
+    implementation("com.yandex.android:maps.mobile:4.17.0-full")
     // Полная библиотека в дополнение к lite версии предоставляет автомобильную маршрутизацию,
     // веломаршрутизацию, пешеходную маршрутизацию и маршрутизацию на общественном транспорте,
     // поиск, suggest, геокодирование и отображение панорам.

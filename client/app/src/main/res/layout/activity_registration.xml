@@ -1,87 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
     android:background="@android:color/white"
     android:fitsSystemWindows="true"
+    android:orientation="vertical"
+    android:gravity="top|center"
     tools:context=".RegistrationActivity">
 
-    <!-- Заголовок -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Регистрация и вход"
-        android:textSize="24sp"
-        android:textColor="@android:color/black"
-        android:textAlignment="center"
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="411dp"
+        android:layout_height="60dp"
         android:layout_marginBottom="24dp"
-        android:textStyle="bold"/>
+        android:background="@color/light_green"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingConstraints"
+        tools:layout_editor_absoluteX="0dp">
+        <!-- Заголовок -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Регистрация и вход"
+            android:textAlignment="center"
+            android:textSize="30sp" />
+    </LinearLayout>
 
-    <!-- Поле ввода email -->
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
         android:layout_marginBottom="16dp"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        app:hintTextColor="@color/green">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Email"
-            android:inputType="textEmailAddress"/>
+            android:textSize="20sp"
+            android:inputType="textEmailAddress" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Поле ввода пароля -->
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
         android:layout_marginBottom="24dp"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        app:hintTextColor="@color/green">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Пароль"
-            android:inputType="textPassword"/>
+            android:textSize="20sp"
+            android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Кнопка регистрации -->
     <Button
         android:id="@+id/btnRegister"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Зарегистрироваться"
-        android:textColor="@android:color/white"
-        android:backgroundTint="@android:color/holo_purple"
         android:layout_marginBottom="8dp"
-        android:paddingVertical="12dp"/>
+        android:paddingVertical="12dp"
+        android:textSize="20sp"
+        android:textColor="@color/button1"
+        android:backgroundTint="@color/dark_green"
+        android:text="Зарегистрироваться"/>
 
     <!-- Кнопка входа -->
     <Button
         android:id="@+id/btnLogin"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Войти"
-        android:textColor="@android:color/black"
-        android:backgroundTint="@android:color/darker_gray"
         android:layout_marginBottom="8dp"
-        android:paddingVertical="12dp"/>
+        android:paddingVertical="12dp"
+        android:textSize="20sp"
+        android:textColor="@color/dark_green"
+        android:backgroundTint="@color/light_green"
+        android:text="Войти"/>
 
     <!-- Кнопка ЗАБЫЛИ ПАРОЛЬ -->
     <Button
         android:id="@+id/btnForgotPassword"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Забыли пароль?"
-        android:textColor="@android:color/holo_blue_dark"
-        android:backgroundTint="@android:color/transparent"
         android:layout_marginBottom="16dp"
-        android:paddingVertical="12dp"/>
+        android:backgroundTint="@android:color/transparent"
+        android:textSize="15sp"
+        android:paddingVertical="12dp"
+        android:text="Забыли пароль?"
+        android:textColor="@android:color/holo_blue_dark" />
 
     <!-- Прогресс-бар -->
     <ProgressBar
@@ -89,15 +109,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
     <!-- Сообщения об ошибках -->
     <TextView
         android:id="@+id/tvError"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@android:color/holo_red_dark"
         android:textAlignment="center"
-        android:visibility="gone"/>
+        android:textColor="@android:color/holo_red_dark"
+        android:visibility="gone" />
 
 </LinearLayout>

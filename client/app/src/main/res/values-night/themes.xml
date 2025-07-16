@@ -1,12 +1,14 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
+
     <style name="Base.Theme.MyApplication" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/my_color_primary</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:colorBackground">#2f2f2f</item>
+        <item name="android:colorBackground">@color/main_bg</item>
         <item name="android:fontFamily">@font/russo_one</item>
-        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColor">@color/font</item>
+        <item name="colorLoadingOverlay">@color/main_bg</item>
     </style>
 </resources>

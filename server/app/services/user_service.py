@@ -32,19 +32,20 @@ async def _upsert_users(batch: List[dict]) -> None:
     """
     Обновляет или вставляет пользователей из Firebase.
     """
+    sql = text("""
+        INSERT INTO users
+          (user_uid, display_name, email, phone, role, vehicle_type, plate)
+        VALUES
+          (:user_uid, :display_name, :email, :phone, :role, :vehicle_type, :plate)
+        ON CONFLICT (user_uid) DO UPDATE SET
+          email        = EXCLUDED.email
+    """)
+
+
     async with async_session() as ses:
-        for u in batch:
-            await ses.execute(text("""
-                INSERT INTO users
-                  (user_uid, display_name, email, phone, role, vehicle_type, plate)
-                VALUES
-                  (:user_uid, :display_name, :email, :phone, :role, :vehicle_type, :plate)
-                ON CONFLICT (user_uid) DO UPDATE SET
-                  display_name = EXCLUDED.display_name,
-                  email        = EXCLUDED.email,
-                  phone        = EXCLUDED.phone
-            """), u)
+        await ses.execute(sql, batch)
         await ses.commit()
+
     log.info("Upserted %d users", len(batch))
 
 

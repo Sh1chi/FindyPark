@@ -1,5 +1,9 @@
 package com.example.myapplication
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class ParkingSpot(
     val id: Long,
     val parking_zone_number: String,
@@ -12,4 +16,4 @@ data class ParkingSpot(
     val capacity: Int,
     val capacity_disabled: Int,
     val free_spaces: Int
-)
+): Parcelable

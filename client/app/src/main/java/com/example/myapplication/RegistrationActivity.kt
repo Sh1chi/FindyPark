@@ -1,13 +1,19 @@
 package com.example.myapplication
 
+import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import androidx.core.widget.addTextChangedListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -16,10 +22,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.auth.ActionCodeSettings
+import kotlinx.coroutines.withContext
 
 class RegistrationActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
+
+    private lateinit var btnForgotPassword: Button
+
+    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,14 +40,14 @@ class RegistrationActivity : AppCompatActivity() {
 
         auth = Firebase.auth
 
-
         val etEmail = findViewById<EditText>(R.id.etEmail)
         val etPassword = findViewById<EditText>(R.id.etPassword)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
-        val btnForgotPassword = findViewById<Button>(R.id.btnForgotPassword)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val tvError = findViewById<TextView>(R.id.tvError)
+        btnForgotPassword = findViewById(R.id.btnForgotPassword)
+
 
         // Регистрация по Email/Password
         btnRegister.setOnClickListener {
@@ -44,7 +57,7 @@ class RegistrationActivity : AppCompatActivity() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 registerWithEmailPassword(email, password)
             } else {
-                Toast.makeText(this, "Заполните все поля", Toast.LENGTH_SHORT).show()
+               showToast("Заполните все поля")
             }
         }
 
@@ -56,12 +69,17 @@ class RegistrationActivity : AppCompatActivity() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 loginWithEmailPassword(email, password)
             } else {
-                Toast.makeText(this, "Заполните все поля", Toast.LENGTH_SHORT).show()
+               showToast("Заполните все поля")
             }
         }
 
         btnForgotPassword.setOnClickListener {
-            Toast.makeText(this, "Функция восстановления пароля в разработке", Toast.LENGTH_SHORT).show()
+            AlertDialog.Builder(this@RegistrationActivity)
+                .setTitle("Тех.поддержка")
+                .setMessage("Для связи с тех.поддержкой, пожалуйста, напишите в Telegram по одному из " +
+                        "следующих тегов:\n@Sh1chik\n@qui_ibi\n@vova_barysh")
+                .setPositiveButton("ОК", null)
+                .show()
         }
     }
 
@@ -73,11 +91,7 @@ class RegistrationActivity : AppCompatActivity() {
                 finish()
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(
-                        this@RegistrationActivity,
-                        "Ошибка регистрации: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showToast("Ошибка регистрации: ${e.message}", Toast.LENGTH_LONG)
                 }
             }
         }
@@ -91,11 +105,7 @@ class RegistrationActivity : AppCompatActivity() {
                 finish()
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(
-                        this@RegistrationActivity,
-                        "Ошибка входа: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showToast("Ошибка входа: ${e.message}", Toast.LENGTH_LONG)
                 }
             }
         }

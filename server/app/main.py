@@ -8,9 +8,10 @@ from firebase_admin import credentials, initialize_app
 
 from app.core.config import get_settings
 from app.db import test_connection, async_session
-from app.routes import parkings_routes, bookings_routes, assistant_routes, reviews_routes, users_routes
-from app.services.parking_service import refresh_data
-from app.services.user_service import refresh_user_data
+from app.routes import parkings_routes, bookings_routes, assistant_routes, reviews_routes, users_routes, tariffs_routes
+from app.services.parking_service import refresh_data       # периодический импорт open-data
+from app.services.user_service import refresh_user_data     # синхронизация профилей
+
 
 # Настраиваем базовый логгер
 logging.basicConfig(level=logging.INFO)
@@ -25,12 +26,13 @@ app = FastAPI(
 
 # Подключаем все роутеры
 app.include_router(parkings_routes.router)
+app.include_router(tariffs_routes.router)
 app.include_router(users_routes.router)
 app.include_router(bookings_routes.router)
 app.include_router(reviews_routes.router)
 app.include_router(assistant_routes.router)
 
-# Разрешаем все CORS-запросы
+# Разрешаем все CORS-запросы (можно ограничить в будущем)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,8 +43,14 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def on_startup():
-    """Обработчик события запуска приложения"""
-    await test_connection()  # проверяем соединение с БД
+    """
+    Обработчик события запуска приложения.
+
+    Создает тестовой соединение с сервером.
+    Синхронизирует данные парковок и пользователей.
+    """
+    await test_connection()  # проверяем и логируем
+    asyncio.create_task(refresh_data())
 
     # Инициализируем Firebase Admin SDK
     cred = credentials.Certificate(settings.firebase_credentials_path)

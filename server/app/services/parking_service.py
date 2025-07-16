@@ -2,73 +2,100 @@ import asyncio
 import logging
 import traceback
 import httpx
-from typing import List, Optional
+
+from typing import List, Optional, Tuple
 from sqlalchemy import text
+
 from app.core.config import get_settings
 from app.schemas.parking_schema import Parking
 from app.db import async_session
+from app.services.tariff_service import upsert_tariffs
 import json
 
 # Конфигурация
 DATASET_ID = 623
 ROWS_URL = f"https://apidata.mos.ru/v1/datasets/{DATASET_ID}/rows"
-MAX_ROWS = 1000
-REQUEST_TIMEOUT = 40
-MAX_RETRIES = 3
-RETRY_DELAY = 15
-IS_TEST = True
-MAX_TOTAL = 100
 
-log = logging.getLogger(__name__)
+MAX_ROWS = 1000          # Лимит размера страницы data.mos.ru
+REQUEST_TIMEOUT = 40     # Таймаут запроса (секунды)
+MAX_RETRIES = 3          # Количество попыток при ошибках
+RETRY_DELAY = 15         # Задержка между попытками (секунды)
+
+# Просто переключатель: в тестах True, в проде — False
+IS_TEST = True
+MAX_TOTAL = 100      # Лимит получаемых записей для теста
+
+log      = logging.getLogger(__name__)
 settings = get_settings()
 
+def _map_row(row: dict) -> Optional[Tuple[Parking, List[dict]]]:
+    """
+    Преобразует запись data.mos.ru в объект Parking.
 
-def _map_row(row: dict) -> Optional[Parking]:
-    """Оптимизированное преобразование данных из API в объект Parking"""
-    try:
-        # Получение координат
-        coords = None
-        if "Geometry" in row and row["Geometry"].get("coordinates"):
-            coords = row["Geometry"]["coordinates"]
-        elif (cells_geo := row.get("Cells", {}).get("geoData")) and cells_geo.get("coordinates"):
-            raw = cells_geo["coordinates"]
-            if isinstance(raw, list) and raw:
-                first = raw[0]
-                coords = first[0] if isinstance(first[0], list) else first
-        else:
-            lon = row.get("Longitude_WGS84") or row.get("Longitude")
-            lat = row.get("Latitude_WGS84") or row.get("Latitude")
-            if lon is not None and lat is not None:
-                coords = [lon, lat]
+    Если не удаётся получить координаты или ID, возвращает None.
+    """
+    coords = None
 
-        if not coords or len(coords) < 2:
-            return None
+    # Пытаемся получить координаты из разных возможных полей
+    if "Geometry" in row and row["Geometry"].get("coordinates"):
+        coords = row["Geometry"]["coordinates"]
 
-        lon, lat = float(coords[0]), float(coords[1])
-        cells = row.get("Cells", {})
-        gid = int(row.get("global_id") or cells.get("ID"))
-        capacity = int(cells.get("CarCapacity") or cells.get("TotalPlaces") or 0)
+    elif (cells_geo := row.get("Cells", {}).get("geoData")) and cells_geo.get("coordinates"):
+        # Вложенный формат [[[lon, lat], ...]]
+        raw = cells_geo["coordinates"]
+        if isinstance(raw, list) and raw:
+            first = raw[0]
+            coords = first[0] if isinstance(first[0], list) else first
 
-        return Parking(
-            id=gid,
-            parking_zone_number=cells.get("ParkingZoneNumber", ""),
-            name=cells.get("ParkingName", cells.get("Address", "Без названия")),
-            address=cells.get("Address", ""),
-            adm_area=cells.get("AdmArea"),
-            district=cells.get("District"),
-            lat=lat,
-            lon=lon,
-            capacity=capacity,
-            capacity_disabled=int(cells.get("CarCapacityDisabled") or 0),
-            free_spaces=capacity,  # Изначально все места свободны
-        )
-    except (TypeError, ValueError, KeyError) as e:
-        log.debug(f"Skipping row due to error: {e}")
+    else:
+        # Альтернативный формат координат
+        lon = row.get("Longitude_WGS84") or row.get("Longitude")
+        lat = row.get("Latitude_WGS84")  or row.get("Latitude")
+        if lon is not None and lat is not None:
+            coords = [lon, lat]
+
+    if not coords or len(coords) < 2:
         return None
+    lon, lat = float(coords[0]), float(coords[1])
+
+    cells = row.get("Cells", {})
+    try:
+        gid = int(row.get("global_id") or cells.get("ID"))
+    except (TypeError, ValueError):
+        return None
+
+    capacity = int(cells.get("CarCapacity") or cells.get("TotalPlaces") or 0)
+
+    parking = Parking(
+        id=gid,
+        parking_zone_number=cells.get("ParkingZoneNumber", ""),
+        name=cells.get("ParkingName", cells.get("Address", "Без названия")),
+        address=cells.get("Address", ""),
+        adm_area=cells.get("AdmArea"),
+        district=cells.get("District"),
+        lat=lat,
+        lon=lon,
+        capacity=capacity,
+        capacity_disabled=int(cells.get("CarCapacityDisabled") or 0),
+        free_spaces=capacity,
+    )
+    # Теперь забираем список тарифов из row["Cells"]
+    tariffs = row.get("Cells", {}).get("Tariffs", [])  # list of dict
+
+    return parking, tariffs
 
 
 async def _safe_get(client: httpx.AsyncClient, params: dict) -> Optional[list]:
-    """Улучшенный обработчик запросов с повторными попытками"""
+    """
+    GET-запрос с повторными попытками при таймаутах, ошибках 5xx и 429.
+
+    Args:
+        client (httpx.AsyncClient): HTTP-клиент.
+        params (dict): Параметры запроса.
+
+    Returns:
+        Optional[list]: Список записей или None, если все попытки не удались.
+    """
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             resp = await client.get(ROWS_URL, params=params, timeout=REQUEST_TIMEOUT)
@@ -82,12 +109,21 @@ async def _safe_get(client: httpx.AsyncClient, params: dict) -> Optional[list]:
                 log.warning(f"HTTP {e.response.status_code} {attempt}/{MAX_RETRIES}, retrying")
                 await asyncio.sleep(RETRY_DELAY)
             else:
-                raise
+                raise   # Прерываем попытки на других ошибках
+        await asyncio.sleep(RETRY_DELAY)
     return None
 
 
-async def _fetch_parkings() -> List[Parking]:
-    """Унифицированный метод загрузки данных"""
+async def _fetch_all() -> List[Tuple[Parking, list]]:
+    """
+    Загружает все данные о парковках с data.mos.ru постранично.
+
+    Returns:
+        List[Parking]: Список успешно обработанных парковок.
+
+    Raises:
+        RuntimeError: Если страница не была загружена после повторных попыток.
+    """
     if IS_TEST:
         log.info("Running in TEST mode (limit: %d parkings)", MAX_TOTAL)
         async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
@@ -98,109 +134,120 @@ async def _fetch_parkings() -> List[Parking]:
             })
             return [p for row in (batch or [])[:MAX_TOTAL] if (p := _map_row(row))]
 
-    # Режим production: постраничная загрузка
-    results: List[Parking] = []
+    results: List[Tuple[Parking, list]] = []
     skip = 0
+
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+        page = 0
         while True:
             params = {
-                "$top": MAX_ROWS,
-                "$skip": skip,
+                "$top":   MAX_ROWS,
+                "$skip":  skip,
                 "api_key": settings.data_mos_token,
             }
+
             batch = await _safe_get(client, params)
             if batch is None:
-                raise RuntimeError(f"Failed to fetch page at offset {skip}")
+                raise RuntimeError(f"Не удалось загрузить страницу offset={skip}")
             if not batch:
+                # Нет больше данных — завершаем
                 break
 
-            valid_parkings = [p for row in batch if (p := _map_row(row))]
-            results.extend(valid_parkings)
-            skip += MAX_ROWS
-            log.info("Fetched page: %d valid parkings", len(valid_parkings))
+            good = bad = 0
+            for row in batch:
+                p = _map_row(row)
+                if p:
+                    results.append(p)
+                    good += 1
+                else:
+                    bad += 1
+            log.info("page %-4s ok=%-3s dropped=%-3s", page, good, bad)
 
-    log.info("Total fetched parkings: %d", len(results))
+            skip += MAX_ROWS
+            page += 1
+
+    log.info("Fetched %s parking rows total", len(results))
     return results
 
 
-async def save_parking_to_db(parkings: List[Parking]) -> None:
-    """Безопасное массовое обновление данных в БД"""
-    if not parkings:
-        log.warning("No parkings to save")
-        return
+async def _fetch_limited() -> List[Tuple[Parking, list]]:
+    """
+    Единственный запрос, возвращает первые MAX_TOTAL записей — только для тестов.
+    """
+    results: List[Tuple[Parking, list]] = []
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+        batch = await _safe_get(client, {
+            "$top":    MAX_TOTAL,
+            "$skip":   0,
+            "api_key": settings.data_mos_token,
+        })
+        if not batch:
+            return results
+        for row in batch[:MAX_TOTAL]:
+            if p := _map_row(row):
+                results.append(p)
+    log.info("Fetched %s parking rows (test)", len(results))
+    return results
 
+
+async def save_records_to_db(records: List[Tuple[Parking, list]]) -> None:
+    """
+    Простая вставка/обновление парковок в БД.
+    """
     async with async_session() as session:
-        try:
-            # Сначала получаем текущие данные о парковках
-            existing_ids = await session.execute(
-                text("SELECT id FROM parkings")
-            )
-            existing_ids = {row[0] for row in existing_ids}
-
-            # Подготовка данных
-            for p in parkings:
-                values = {
-                    "id": p.id,
-                    "zone": p.parking_zone_number,
-                    "name": p.name,
-                    "address": p.address,
-                    "adm_area": p.adm_area,
-                    "district": p.district,
-                    "capacity": p.capacity,
-                    "capacity_disabled": p.capacity_disabled,
-                    "free_spaces": p.free_spaces,
-                    "lon": p.lon,
-                    "lat": p.lat
+        for parking, tariffs in records:
+            await session.execute(
+                text("""
+                    INSERT INTO parkings
+                        (id, parking_zone_number, name, address, adm_area, district, capacity, capacity_disabled, available_spaces, geom)
+                    VALUES
+                        (:id, :zone, :name, :address, :adm_area, :district, :capacity, :capacity_disabled, :free_spaces,
+                            ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
+                    ON CONFLICT (id) DO UPDATE SET
+                        parking_zone_number = EXCLUDED.parking_zone_number,
+                        name                = EXCLUDED.name,
+                        address             = EXCLUDED.address,
+                        adm_area            = EXCLUDED.adm_area,
+                        district            = EXCLUDED.district,
+                        capacity            = EXCLUDED.capacity,
+                        capacity_disabled   = EXCLUDED.capacity_disabled,
+                        available_spaces    = EXCLUDED.available_spaces,
+                        geom                = EXCLUDED.geom
+                """),
+                {
+                    "id": parking.id,
+                    "zone": parking.parking_zone_number,
+                    "name": parking.name,
+                    "address": parking.address,
+                    "adm_area": parking.adm_area,
+                    "district": parking.district,
+                    "capacity": parking.capacity,
+                    "capacity_disabled": parking.capacity_disabled,
+                    "free_spaces": parking.free_spaces,
+                    "lon": parking.lon,
+                    "lat": parking.lat,
                 }
+            )
 
-                if p.id in existing_ids:
-                    # Обновление существующей записи
-                    await session.execute(text("""
-                        UPDATE parkings SET
-                            parking_zone_number = :zone,
-                            name = :name,
-                            address = :address,
-                            adm_area = :adm_area,
-                            district = :district,
-                            capacity = :capacity,
-                            capacity_disabled = :capacity_disabled,
-                            geom = ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)
-                        WHERE id = :id
-                    """), values)
-                else:
-                    # Вставка новой записи
-                    await session.execute(text("""
-                        INSERT INTO parkings (
-                            id, parking_zone_number, name, address, adm_area, 
-                            district, capacity, capacity_disabled, 
-                            available_spaces, geom
-                        ) VALUES (
-                            :id, :zone, :name, :address, :adm_area,
-                            :district, :capacity, :capacity_disabled,
-                            :free_spaces,
-                            ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)
-                        )
-                    """), values)
+            await upsert_tariffs(parking.id, tariffs, session)
 
-            await session.commit()
-            log.info("Successfully saved %d parkings to DB", len(parkings))
+        await session.commit()
+    logging.getLogger(__name__).info("Saved %d parking rows to DB", len(records))
 
-        except Exception as e:
-            await session.rollback()
-            log.error("Failed to save parkings: %s\n%s", str(e), traceback.format_exc())
-            raise
 
 async def refresh_data() -> None:
-    """Фоновая задача обновления данных с улучшенной обработкой ошибок"""
+    """
+    Фоновая задача: обновление данных о парковках каждые 60 минут.
+    """
     while True:
         try:
-            start_time = asyncio.get_event_loop().time()
-            parking = await _fetch_parkings()
-            await save_parking_to_db(parking)
-            elapsed = asyncio.get_event_loop().time() - start_time
-            log.info(f"Data refresh completed in {elapsed:.2f} seconds")
-        except Exception as e:
-            log.error("Data refresh error: %s\n%s", str(e), traceback.format_exc())
-            await asyncio.sleep(300)  # Пауза при ошибке 5 минут
-        else:
-            await asyncio.sleep(60 * 60)  # Обычный интервал 1 час
+            if IS_TEST:
+                records  = await _fetch_limited()
+                #log.info("Test-mode fetch: %s records", len(app_state.parkings))
+            else:
+                records  = await _fetch_all()
+                #]log.info("Full fetch: %s records", len(app_state.parkings))
+            await save_records_to_db(records)
+        except Exception:
+            log.warning("Dataset refresh failed:\n%s", traceback.format_exc())
+        await asyncio.sleep(60 * 60)
