@@ -109,8 +109,7 @@ async def _safe_get(client: httpx.AsyncClient, params: dict) -> Optional[list]:
                 log.warning(f"HTTP {e.response.status_code} {attempt}/{MAX_RETRIES}, retrying")
                 await asyncio.sleep(RETRY_DELAY)
             else:
-                raise   # Прерываем попытки на других ошибках
-        await asyncio.sleep(RETRY_DELAY)
+                raise
     return None
 
 
