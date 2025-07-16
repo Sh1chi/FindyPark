@@ -26,7 +26,6 @@ object ParkingRepository {
         cachedParkings = null
     }
 
-    // Функция поиска по кэшированным данным
     suspend fun searchParkings(query: String): List<ParkingSpot> {
         if (cachedParkings == null) {
             // Если кэш пуст, загружаем данные с сервера

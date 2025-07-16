@@ -22,7 +22,6 @@ class ParkingAdapter(
             tvAddress.text = item.address
             tvTotal.text = "Мест всего: ${item.capacity ?: "неизвестно"}"
             tvFree.text  = "Мест свободно: ${item.free_spaces ?: "неизвестно"}"
-
         }
     }
 
