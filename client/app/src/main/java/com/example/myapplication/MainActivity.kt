@@ -1,6 +1,5 @@
 package com.example.myapplication
 
-import ClusterView
 import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
@@ -156,13 +155,8 @@ class MainActivity : AppCompatActivity() {
 
     // ClusterListener
     private val clusterListener = ClusterListener { cluster ->
-        cluster.appearance.setView(
-            ViewProvider(
-                ClusterView(this).apply {
-                    setText("${cluster.placemarks.size}")
-                }
-            )
-        )
+        val clusterIcon = ImageProvider.fromResource(this, R.drawable.vehicle)
+        cluster.appearance.setIcon(clusterIcon)
         cluster.appearance.zIndex = 100f
 
         cluster.addClusterTapListener(clusterTapListener)
@@ -180,7 +174,6 @@ class MainActivity : AppCompatActivity() {
             Animation(Animation.Type.SMOOTH, 0.5f),
             null
         )
-        showToast("Clicked on cluster with ${tappedCluster.size} items")
         true
     }
 
@@ -200,8 +193,8 @@ class MainActivity : AppCompatActivity() {
 
         override fun onDrivingRoutesError(error: Error) {
             when (error) {
-                is NetworkError -> showToast("Routes request error due network issues")
-                else -> showToast("Routes request unknown error")
+                is NetworkError -> showToast("Невозможно построить маршрут из-за сетевых неполадок")
+                else -> showToast("Неизвестная ошибка построения маршрута")
             }
         }
     }
@@ -400,7 +393,7 @@ class MainActivity : AppCompatActivity() {
 
         delRouteButton.setOnClickListener {
             if (routePoints.isEmpty()){
-                showToast("Нет пути, для удаления")
+                showToast("Нет пути для удаления")
             }
             else {
                 routePoints = emptyList()
@@ -529,7 +522,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Проверка: нельзя раньше текущего момента
                 if (tsFrom.before(now)) {
-                    showToast("Нельзя выбрать время в прошлом")
+                    showToast("Ошибка выбора времени. Попробуйте еще раз")
                     return@TimePickerDialog
                 }
 
@@ -778,7 +771,7 @@ class MainActivity : AppCompatActivity() {
                         val tariff = ApiClient.parkingApi.getTariff(selectedParkingId)
                         parkingTariff.text = "Стоимость в час: ${tariff.hour_price} руб"
                     }catch (e: Exception){
-                        showToast("${e.localizedMessage}")
+                        showToast("Ошибка получения данных о тарифе: ${e.localizedMessage}")
                     }
                 }
                 bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED

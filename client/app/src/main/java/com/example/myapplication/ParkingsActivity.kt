@@ -34,6 +34,10 @@ class ParkingsActivity : AppCompatActivity() {
     private lateinit var parkingLabel: TextView
     private lateinit var searchEditText: EditText
 
+    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -64,12 +68,11 @@ class ParkingsActivity : AppCompatActivity() {
             try {
                 val parkings = ParkingRepository.getParkings()
                 adapter = ParkingAdapter(parkings) { spot ->
-                    Toast.makeText(this@ParkingsActivity, "Выбрана: ${spot.name}",
-                        Toast.LENGTH_SHORT).show()
+                    showToast("Выбрана: ${spot.name}")
                 }
                 recyclerView.adapter = adapter
             } catch (e: Exception) {
-                Toast.makeText(this@ParkingsActivity, "Ошибка загрузки данных: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                showToast("Ошибка загрузки данных: ${e.localizedMessage}", Toast.LENGTH_LONG)
             }
         }
 
@@ -84,16 +87,11 @@ class ParkingsActivity : AppCompatActivity() {
                         val searchQuery = s.toString()
                         val parkings = ParkingRepository.searchParkings(searchQuery)
                         adapter = ParkingAdapter(parkings) { spot ->
-                            Toast.makeText(this@ParkingsActivity, "Выбрана: ${spot.name}",
-                                Toast.LENGTH_SHORT).show()
+                            showToast("Выбрана: ${spot.name}")
                         }
                         recyclerView.adapter = adapter
                     } catch (e: Exception) {
-                        Toast.makeText(
-                            this@ParkingsActivity,
-                            "Ошибка: ${e.localizedMessage}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        showToast("Ошибка загрузки данных: ${e.localizedMessage}", Toast.LENGTH_LONG)
                     }
                 }
             }

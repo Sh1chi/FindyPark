@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -29,6 +30,10 @@ class RegistrationActivity : AppCompatActivity() {
 
     private lateinit var btnForgotPassword: Button
 
+    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_registration)
@@ -52,7 +57,7 @@ class RegistrationActivity : AppCompatActivity() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 registerWithEmailPassword(email, password)
             } else {
-                Toast.makeText(this, "Заполните все поля", Toast.LENGTH_SHORT).show()
+               showToast("Заполните все поля")
             }
         }
 
@@ -64,7 +69,7 @@ class RegistrationActivity : AppCompatActivity() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 loginWithEmailPassword(email, password)
             } else {
-                Toast.makeText(this, "Заполните все поля", Toast.LENGTH_SHORT).show()
+               showToast("Заполните все поля")
             }
         }
 
@@ -86,11 +91,7 @@ class RegistrationActivity : AppCompatActivity() {
                 finish()
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(
-                        this@RegistrationActivity,
-                        "Ошибка регистрации: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showToast("Ошибка регистрации: ${e.message}", Toast.LENGTH_LONG)
                 }
             }
         }
@@ -104,11 +105,7 @@ class RegistrationActivity : AppCompatActivity() {
                 finish()
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(
-                        this@RegistrationActivity,
-                        "Ошибка входа: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showToast("Ошибка входа: ${e.message}", Toast.LENGTH_LONG)
                 }
             }
         }

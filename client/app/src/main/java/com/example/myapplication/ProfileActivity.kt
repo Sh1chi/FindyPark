@@ -27,6 +27,10 @@ import kotlinx.coroutines.tasks.await
 
 class ProfileActivity : AppCompatActivity() {
 
+    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -223,15 +227,11 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         exitTextView.setOnClickListener {
-            Toast.makeText(this, "Выходим", Toast.LENGTH_SHORT).show()
+            showToast("Выходим")
             auth.signOut()
             startActivity(Intent(this, RegistrationActivity::class.java))
             finish()
         }
 
-    }
-
-    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-        Toast.makeText(this, message, duration).show()
     }
 }

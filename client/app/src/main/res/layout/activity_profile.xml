@@ -135,6 +135,12 @@
             android:paddingVertical="20dp"
             android:paddingHorizontal="12dp"
             android:background="?android:selectableItemBackground" />
+
+        <!-- Разделительная черта -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDDDDD" />
     </LinearLayout>
 
     <!-- Экран загрузки -->
