@@ -1,7 +1,5 @@
 package com.example.myapplication
 
-import android.content.Intent
-import android.net.Uri
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

@@ -113,7 +113,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clasterizedCollection: ClusterizedPlacemarkCollection
     private lateinit var userLocationLayer: UserLocationLayer
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<LinearLayout>
-    private var selectedParkingId: Long? = null
     private lateinit var parkingTitle: TextView
     private lateinit var parkingAddress: TextView
     private lateinit var parkingCapacity: TextView
@@ -130,12 +129,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bottomSheet: LinearLayout
     private lateinit var suggestionAdapter: ParkingSuggestionAdapter
     private lateinit var parkingRecyclerView: RecyclerView
-
     private val placemarkMap = mutableMapOf<Long, PlacemarkMapObject>()
-
-    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-        Toast.makeText(this, message, duration).show()
-    }
+    private lateinit var drivingRouter: DrivingRouter
+    private var drivingSession: DrivingSession? = null
+    private var selectedParkingId: Long? = null
+    private lateinit var placemarksCollection: MapObjectCollection
+    private lateinit var routesCollection: MapObjectCollection
 
     // Обработчик нажатия по метке на карте
     private val placemarkTapListener = MapObjectTapListener { mapObject, point ->
@@ -177,6 +176,7 @@ class MainActivity : AppCompatActivity() {
         true
     }
 
+    // Запрос на показывание геопозиции
     private val locationPermissionRequest =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -210,11 +210,6 @@ class MainActivity : AppCompatActivity() {
             field = value
             onRoutesUpdated()
         }
-
-    private lateinit var drivingRouter: DrivingRouter
-    private var drivingSession: DrivingSession? = null
-    private lateinit var placemarksCollection: MapObjectCollection
-    private lateinit var routesCollection: MapObjectCollection
 
     //////////////////////////////////////////////
     @SuppressLint("SuspiciousIndentation")
@@ -801,5 +796,9 @@ class MainActivity : AppCompatActivity() {
                 makeRoute(parking!!)
             }
         }
+    }
+
+    fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
     }
 }
