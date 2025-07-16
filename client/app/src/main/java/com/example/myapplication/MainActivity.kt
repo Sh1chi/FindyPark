@@ -201,6 +201,7 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         // Инициализация Firebase Auth
         auth = Firebase.auth
         if (auth.currentUser == null) {
@@ -208,7 +209,6 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
-        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         // Инициализация элементов UI

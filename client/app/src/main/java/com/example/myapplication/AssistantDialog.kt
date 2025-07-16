@@ -85,7 +85,7 @@ class AssistantDialog : BottomSheetDialogFragment() {
 
         // Замените YOUR_SERVER_URL на реальный URL вашего сервера
         val request = Request.Builder()
-            .url("http://192.168.0.10:8000/assistant/ask")
+            .url("http://192.168.100.12:8000/assistant/ask")
             .post(body)
             .build()
 

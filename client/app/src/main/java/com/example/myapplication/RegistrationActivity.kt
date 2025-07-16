@@ -50,7 +50,7 @@ class RegistrationActivity : AppCompatActivity() {
         auth = Firebase.auth
 
         // Инициализация элементов UI
-
+        progressBar = findViewById(R.id.progressBar)
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         btnRegister = findViewById(R.id.btnRegister)
