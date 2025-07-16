@@ -135,6 +135,11 @@ class MainActivity : AppCompatActivity() {
     private var selectedParkingId: Long? = null
     private lateinit var placemarksCollection: MapObjectCollection
     private lateinit var routesCollection: MapObjectCollection
+    private lateinit var menuButton: ImageButton
+    private lateinit var plusButton: ImageButton
+    private lateinit var minButton: ImageButton
+    private lateinit var posButton: ImageButton
+    private lateinit var helpButton: ImageButton
 
     // Обработчик нажатия по метке на карте
     private val placemarkTapListener = MapObjectTapListener { mapObject, point ->
@@ -176,7 +181,7 @@ class MainActivity : AppCompatActivity() {
         true
     }
 
-    // Запрос на показывание геопозиции
+    // Запрос на показ геопозиции
     private val locationPermissionRequest =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -186,6 +191,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    // RouteListener
     private val drivingRouteListener = object : DrivingRouteListener {
         override fun onDrivingRoutes(drivingRoutes: MutableList<DrivingRoute>) {
             routes = drivingRoutes
@@ -199,46 +205,77 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Точки для построения маршрута
     private var routePoints = emptyList<Point>()
         set(value) {
             field = value
             onRoutePointsUpdated()
         }
 
+    // Список маршрутов
     private var routes = emptyList<DrivingRoute>()
         set(value) {
             field = value
             onRoutesUpdated()
         }
 
-    //////////////////////////////////////////////
+
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
         // Инициализация Firebase Auth
         auth = Firebase.auth
-
-        // Проверка авторизации
         if (auth.currentUser == null) {
             startActivity(Intent(this, RegistrationActivity::class.java))
             finish()
-            return // Прерываем выполнение onCreate
+            return
         }
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         // Инициализация элементов UI
-
+        parkingRecyclerView = findViewById(R.id.parkingRecyclerView)
         searchLayout = findViewById(R.id.searchLayout)
         searchEditText = findViewById(R.id.searchEditText)
         closeSearchButton = findViewById(R.id.closeSearch)
-        findButton = findViewById(R.id.findButton)
-        bottomSheet = findViewById(R.id.bottom_sheet)
-        parkingRecyclerView = findViewById(R.id.parkingRecyclerView)
+
         supportButton = findViewById(R.id.supportButton)
         delRouteButton = findViewById(R.id.delRouteButton)
+        findButton = findViewById(R.id.findButton)
+        menuButton = findViewById<ImageButton>(R.id.menuButton)
+        plusButton = findViewById<ImageButton>(R.id.plusButton)
+        minButton = findViewById<ImageButton>(R.id.minButton)
+        helpButton = findViewById<ImageButton>(R.id.helpButton)
+        posButton = findViewById<ImageButton>(R.id.posButton)
 
-        // Инициализация RecyclerView
+        parkingTitle = findViewById(R.id.parking_title)
+        parkingAddress = findViewById(R.id.parking_address)
+        parkingCapacity = findViewById(R.id.parking_capacity)
+        parkingDisabled = findViewById(R.id.parking_disabled)
+        parkingFreeSpaces = findViewById(R.id.parking_free_spaces)
+        parkingTariff = findViewById(R.id.parking_tariff)
+        parkingDetails = findViewById(R.id.parking_details)
+
+        bottomSheet = findViewById(R.id.bottom_sheet)
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+
+        // Получаем MapView и настраиваем камеру (центр и зум)
+
+        mapView = findViewById(R.id.mapview)
+        map = mapView.mapWindow.map
+        map.move(
+            CameraPosition(
+                Point(55.751225, 37.62954), // координаты центра (Москва)
+                13.0f, // зум
+                0.0f,  // азимут
+                0.0f   // наклон
+            )
+        )
+        placemarksCollection = map.mapObjects.addCollection()
+        routesCollection = map.mapObjects.addCollection()
+
+        // Инициализация RecyclerView (результаты поиска)
+
         suggestionAdapter = ParkingSuggestionAdapter { parking ->
             mapView.mapWindow.map.move(
                 CameraPosition(
@@ -258,57 +295,26 @@ class MainActivity : AppCompatActivity() {
 
         }
         parkingRecyclerView.adapter = suggestionAdapter
-
         parkingRecyclerView.layoutManager = LinearLayoutManager(this)
-
         parkingRecyclerView.addItemDecoration(
             DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
         )
-
-        // Получаем MapView и настраиваем камеру (центр и зум)
-        mapView = findViewById(R.id.mapview)
-        map = mapView.mapWindow.map
-        map.move(
-            CameraPosition(
-                Point(55.751225, 37.62954), // координаты центра (Москва)
-                13.0f, // зум
-                0.0f,  // азимут
-                0.0f   // наклон
-            )
-        )
-
-        placemarksCollection = map.mapObjects.addCollection()
-        routesCollection = map.mapObjects.addCollection()
+        
+        // Создание маршрутизатора
 
         drivingRouter = DirectionsFactory.getInstance().createDrivingRouter(DrivingRouterType.COMBINED)
 
-        val bottomSheet = findViewById<LinearLayout>(R.id.bottom_sheet)
-        if (bottomSheet == null) {
-            Log.e("MainActivity", "Bottom sheet view is null!")
-            return
-        }
-        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
-        parkingTitle = findViewById(R.id.parking_title)
-        parkingAddress = findViewById(R.id.parking_address)
-        parkingCapacity = findViewById(R.id.parking_capacity)
-        parkingDisabled = findViewById(R.id.parking_disabled)
-        parkingFreeSpaces = findViewById(R.id.parking_free_spaces)
-        parkingTariff = findViewById(R.id.parking_tariff)
-        parkingDetails = findViewById(R.id.parking_details)
+        // Запрашиваем разрешение на использование геолокации
 
-        // ЗАПРАШИВАЕМ РАЗРЕШЕНИЕ НА ИСПОЛЬЗОВАНИЕ ГЕОПОЗИЦИИ
         locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
 
+        // Создание коллекции и добавление в нее кластеров
 
-
-        // СОЗДАНИЕ КОЛЛЕКЦИИ
         collection = map.mapObjects.addCollection()
-
-        // ДОБАВЛЕНИЕ КЛАСТЕРОВ В КОЛЛЕКЦИИ
         clasterizedCollection = collection.addClusterizedPlacemarkCollection(clusterListener)
 
-        // ЗАГРУЗКА ТОЧЕК И КЛАСТЕРОВ НА КАРТЕ
+        // Загрузка точек и кластеров на карту
+
         lifecycleScope.launch {
             try{
                 val parkings = ParkingRepository.getParkings()
@@ -327,14 +333,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // ОБРАБОТЧИКИ КНОПОК
-        val menuButton = findViewById<ImageButton>(R.id.menuButton)
+        // Обработчики кнопок
+
         menuButton.setOnClickListener {
             val intent = Intent(this, MenuActivity::class.java)
             startActivity(intent)
         }
 
-        val plusButton = findViewById<ImageButton>(R.id.plusButton)
         plusButton.setOnClickListener {
             val currPos = mapView.mapWindow.map.cameraPosition
             mapView.mapWindow.map.move(
@@ -349,7 +354,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        val minButton = findViewById<ImageButton>(R.id.minButton)
         minButton.setOnClickListener {
             val currPos = mapView.mapWindow.map.cameraPosition
             mapView.mapWindow.map.move(
@@ -364,7 +368,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        val posButton = findViewById<ImageButton>(R.id.posButton)
         posButton.setOnClickListener {
             val userLocationView = userLocationLayer.cameraPosition()
             if (userLocationView != null) {
@@ -379,12 +382,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val helpButton = findViewById<ImageButton>(R.id.helpButton)
         helpButton.setOnClickListener {
             val assistantDialog = AssistantDialog()
             assistantDialog.show(supportFragmentManager, "assistant_dialog")
         }
-
 
         delRouteButton.setOnClickListener {
             if (routePoints.isEmpty()){
@@ -397,19 +398,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Открытие строки поиска с анимацией
         findButton.setOnClickListener {
             openSearch()
         }
 
-        // Закрытие строки поиска с анимацией
-        closeSearchButton.setOnClickListener {
-            searchEditText.text.clear()
-            closeSearch()
+        supportButton.setOnClickListener {
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("Тех.поддержка")
+                .setMessage("Для связи с тех.поддержкой, пожалуйста, напишите в Telegram по одному из " +
+                        "следующих тегов:\n@Sh1chik\n@qui_ibi\n@vova_barysh")
+                .setPositiveButton("ОК", null)
+                .show()
         }
 
         // Обработчик для поиска
-        // TextWatcher для поиска
+
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
@@ -422,41 +425,25 @@ class MainActivity : AppCompatActivity() {
                         val parkings = ParkingRepository.searchParkings(searchQuery)
                         updateParkingList(parkings)
                     } catch (e: Exception) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Ошибка: ${e.localizedMessage}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        showToast("Ошибка: ${e.localizedMessage}")
                     }
                 }
             }
         })
 
-        supportButton.setOnClickListener {
-            AlertDialog.Builder(this@MainActivity)
-                .setTitle("Тех.поддержка")
-                .setMessage("Для связи с тех.поддержкой, пожалуйста, напишите в Telegram по одному из " +
-                        "следующих тегов:\n@Sh1chik\n@qui_ibi\n@vova_barysh")
-                .setPositiveButton("ОК", null)
-                .show()
+        closeSearchButton.setOnClickListener {
+            searchEditText.text.clear()
+            closeSearch()
         }
+
     }
 
-    // Активируем карту при старте активности
     override fun onStart() {
         super.onStart()
         MapKitFactory.getInstance().onStart()
         mapView.onStart()
-        val selectedSpot = intent.getParcelableExtra<ParkingSpot>("selected_spot")
-        selectedSpot?.let {
-            val targetPoint = Point(it.lat, it.lon)
-            mapView.mapWindow.map.move(
-                CameraPosition(targetPoint, 17f, 0f, 0f)
-            )
-        }
     }
 
-    // Останавливаем карту при закрытии активности
     override fun onStop() {
         mapView.onStop()
         MapKitFactory.getInstance().onStop()
@@ -478,6 +465,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Метод для отображения геопозиции
     fun showUserLocation(){
         if (!::userLocationLayer.isInitialized) {
             val mapKit = MapKitFactory.getInstance()
@@ -489,17 +477,16 @@ class MainActivity : AppCompatActivity() {
                     userLocationView.pin.setIcon(
                         ImageProvider.fromResource(this@MainActivity, R.drawable.ic_dot)
                     )
-
                     // Меняем стиль круга точности
                     userLocationView.accuracyCircle.fillColor = Color.argb(50, 0, 100, 255)
                 }
-
                 override fun onObjectUpdated(view: UserLocationView, event: ObjectEvent) {}
                 override fun onObjectRemoved(view: UserLocationView) {}
             })
         }
     }
 
+    // Метод для отображения окна с выбором даты и времени
     private fun showDateTimePickerForBooking(id: Long) {
         val calendar = Calendar.getInstance()
         val now = Calendar.getInstance()
@@ -565,6 +552,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    // Метод отправки брони
     private fun sendBooking(id:Long, startDateTime: String, endDateTime: String) {
         lifecycleScope.launch {
             val user = Firebase.auth.currentUser
@@ -618,6 +606,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Метод построения маршрута
     private fun makeRoute(parking: ParkingSpot){
         val userLocationView = userLocationLayer.cameraPosition()
         if (userLocationView != null) {
@@ -631,7 +620,8 @@ class MainActivity : AppCompatActivity() {
             showToast("Геопозиция не определена")
         }
     }
-    
+
+    // Метод для обработки изменений конечных точек на маршруте
     private fun onRoutePointsUpdated() {
         placemarksCollection.clear()
 
@@ -672,6 +662,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // Метод для обработки изменений маршрута
     private fun onRoutesUpdated() {
         routesCollection.clear()
         if (routes.isEmpty()) return
@@ -683,6 +674,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Метод для отрисовки главного маршрута
     private fun PolylineMapObject.styleMainRoute() {
         zIndex = 10f
         setStrokeColor(ContextCompat.getColor(this@MainActivity, R.color.blue_500))
@@ -693,6 +685,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Метод для отрисовки второстепенного маршрута
     private fun PolylineMapObject.styleAlternativeRoute() {
         zIndex = 5f
         setStrokeColor(ContextCompat.getColor(this@MainActivity, R.color.grey_300))
@@ -703,7 +696,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Функция для открытия строки поиска с анимацией
+    // Метод для открытия строки поиска с анимацией
     private fun openSearch() {
         searchLayout.visibility = View.VISIBLE
         parkingRecyclerView.visibility = View.VISIBLE
@@ -721,7 +714,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    // Функция для закрытия строки поиска с анимацией
+    // Метод для закрытия строки поиска с анимацией
     private fun closeSearch() {
         val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(searchEditText.windowToken, 0)
@@ -744,10 +737,12 @@ class MainActivity : AppCompatActivity() {
         transitionRecycler.start()
     }
 
+    // Метод для обновления списка парковок в строке поиска
     private fun updateParkingList(parkings: List<ParkingSpot>) {
         suggestionAdapter.submitList(parkings)
     }
 
+    // Метод для отображения нижней панели при нажатии на парковку
     private fun showBottomSheet(mapObject: MapObject){
         val imageProvider = ImageProvider.fromResource(this, R.drawable.ic_pinned)
         if (mapObject is PlacemarkMapObject) {

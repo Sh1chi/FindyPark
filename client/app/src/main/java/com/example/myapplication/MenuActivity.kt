@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -35,10 +36,15 @@ class MenuActivity : AppCompatActivity() {
         }
 
         findViewById<TextView>(R.id.menu_settings).setOnClickListener {
-            Toast.makeText(this, "Данная вкладка находится в разработке и поэтому не имеет функционала",
-                Toast.LENGTH_LONG).show()
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
+
+            AlertDialog.Builder(this)
+                .setTitle("Внимание")
+                .setMessage("Данная вкладка находится в разработке и поэтому еще не имеет функционала.")
+                .setPositiveButton("ОК") {_, _ ->
+                    val intent = Intent(this, SettingsActivity::class.java)
+                    startActivity(intent)
+                }
+                .show()
         }
 
         findViewById<TextView>(R.id.menu_about).setOnClickListener {
