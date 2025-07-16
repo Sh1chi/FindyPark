@@ -34,7 +34,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="8"
-            android:text="@string/parking_list"
+            android:text="@string/parkings"
             android:textSize="30sp"/>
 
         <EditText

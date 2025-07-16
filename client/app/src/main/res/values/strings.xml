@@ -1,10 +1,13 @@
 <resources>
     <string name="app_name">FindyPark</string>
+    <string name="company_name">SkyLance</string>
     <string name="menu">Меню</string>
     <string name="signup_signin">Войти/зарегистрироваться</string>
-    <string name="parking_list">Парковки</string>
     <string name="parkings">Парковки</string>
+    <string name="profile_page">Профиль пользователя</string>
     <string name="settings">Настройки</string>
-    <string name="logout">Выход</string>
+    <string name="logout">Выйти</string>
     <string name="about_app">О приложении</string>
+    <string name="text_support">Написать в тех.поддержку</string>
+    <string name="yandex">Условия использования Яндекс.Карт</string>
 </resources>

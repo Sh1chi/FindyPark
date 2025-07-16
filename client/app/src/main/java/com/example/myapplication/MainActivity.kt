@@ -592,10 +592,12 @@ class MainActivity : AppCompatActivity() {
                 return@launch
             }
 
+            val currUser = ApiClient.parkingApi.getCurrUser("Bearer $token")
+
             val booking = BookingRequest(
                 parking_id = id,
-                vehicle_type = "car",
-                plate = "brbr patapim",
+                vehicle_type = currUser.vehicle_type,
+                plate = currUser.plate,
                 ts_from = startDateTime,
                 ts_to = endDateTime
             )
