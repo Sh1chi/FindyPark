@@ -63,7 +63,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_margin="5dp"
-                android:hint="Поиск и выбор парковок"
+                android:hint="@string/hint_search"
                 android:inputType="text" />
 
             <ImageView
@@ -218,57 +218,49 @@
             android:layout_height="wrap_content"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:text="Название парковки" />
+            android:text="@string/parking_name" />
 
         <TextView
             android:id="@+id/parking_address"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Адрес парковки" />
+            android:text="@string/parking_address" />
 
         <TextView
             android:id="@+id/parking_capacity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Вместимость" />
+            android:text="@string/parking_capacity" />
 
         <TextView
             android:id="@+id/parking_disabled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Инвалидные места" />
+            android:text="@string/parking_disabled" />
 
         <TextView
             android:id="@+id/parking_free_spaces"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Свободные места" />
+            android:text="@string/parking_free_spaces" />
 
         <TextView
             android:id="@+id/parking_tariff"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Тариф" />
+            android:text="@string/parking_tariff"/>
 
         <TextView
             android:id="@+id/parking_details"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Дополнительная информация" />
-
-        <Button
-            android:id="@+id/book_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            android:contentDescription="Забронировать"
-            android:text="Забронировать" />
+            android:text="@string/parking_details" />
 
         <Button
             android:id="@+id/route_button"
@@ -276,7 +268,19 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center_horizontal"
             android:contentDescription="Построить маршрут"
-            android:text="Построить маршрут" />
+            android:textColor="@color/button1"
+            android:backgroundTint="@color/dark_green"
+            android:text="@string/make_route" />
+
+        <Button
+            android:id="@+id/book_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:contentDescription="Забронировать"
+            android:textColor="@color/dark_green"
+            android:backgroundTint="@color/light_green"
+            android:text="@string/book" />
     </LinearLayout>
 
 

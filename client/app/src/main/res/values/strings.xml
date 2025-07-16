@@ -10,4 +10,14 @@
     <string name="about_app">О приложении</string>
     <string name="text_support">Написать в тех.поддержку</string>
     <string name="yandex">Условия использования Яндекс.Карт</string>
+    <string name="hint_search">Поиск и выбор парковок</string>
+    <string name="parking_name">Название парковки</string>
+    <string name="parking_address">Адрес парковки</string>
+    <string name="parking_capacity">Вместимость</string>
+    <string name="parking_disabled">Инвалидные места</string>
+    <string name="parking_free_spaces">Свободные места</string>
+    <string name="parking_tariff">Тариф</string>
+    <string name="parking_details">Дополнительная информация</string>
+    <string name="book">Забронировать</string>
+    <string name="make_route">Проложить маршрут</string>
 </resources>
