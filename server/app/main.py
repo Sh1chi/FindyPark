@@ -11,7 +11,7 @@ from app.db import test_connection, async_session
 from app.routes import parkings_routes, bookings_routes, assistant_routes, reviews_routes, users_routes, tariffs_routes
 from app.services.parking_service import refresh_data       # периодический импорт open-data
 from app.services.user_service import refresh_user_data     # синхронизация профилей
-
+from app.services.occupancy_mocker import main as run_occupancy_mocker
 
 # Настраиваем базовый логгер
 logging.basicConfig(level=logging.INFO)
@@ -60,3 +60,5 @@ async def on_startup():
     asyncio.create_task(refresh_data())  # обновление данных парковок
     asyncio.create_task(refresh_user_data())  # синхронизация пользователей
 
+    # Мок-данные
+    asyncio.create_task(run_occupancy_mocker())
