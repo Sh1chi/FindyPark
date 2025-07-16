@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -34,6 +35,8 @@ class MenuActivity : AppCompatActivity() {
         }
 
         findViewById<TextView>(R.id.menu_settings).setOnClickListener {
+            Toast.makeText(this, "Данная вкладка находится в разработке и поэтому не имеет функционала",
+                Toast.LENGTH_LONG).show()
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
         }
