@@ -13,14 +13,19 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MenuActivity : AppCompatActivity() {
 
+    private lateinit var backButton: ImageButton
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_menu)
 
+        // Инициализация элементов UI
 
-        // Кнопка "назад"
-        val backButton = findViewById<ImageButton>(R.id.backButton)
+        backButton = findViewById(R.id.backButton)
+
+        // Обработчики кнопок
+
         backButton.setOnClickListener {
             finish()
         }
