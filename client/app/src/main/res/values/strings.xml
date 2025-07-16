@@ -4,7 +4,7 @@
     <string name="menu">Меню</string>
     <string name="signup_signin">Войти/зарегистрироваться</string>
     <string name="parkings">Парковки</string>
-    <string name="profile_page">Профиль пользователя</string>
+    <string name="profile_page">Личный кабинет</string>
     <string name="settings">Настройки</string>
     <string name="logout">Выйти</string>
     <string name="about_app">О приложении</string>
@@ -20,4 +20,6 @@
     <string name="parking_details">Дополнительная информация</string>
     <string name="book">Забронировать</string>
     <string name="make_route">Проложить маршрут</string>
+    <string name="parking_assistant">Ассистент Паркин</string>
+    <string name="send">Отправить</string>
 </resources>
