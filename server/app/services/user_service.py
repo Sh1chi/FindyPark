@@ -125,7 +125,7 @@ async def update_user_profile(user_uid: str, data: UserUpdateIn) -> UserOut:
     raw = data.model_dump(exclude_unset=True)
     payload: dict[str, object | None] = {}
 
-    for k, value in raw.items():  # Исправлено: v → value
+    for k, value in raw.items():
         if k == "display_name":
             payload[k] = value.strip() if isinstance(value, str) and value.strip() else "Без имени"
         else:
@@ -164,21 +164,14 @@ async def sync_user_profile(user_uid: str) -> UserOut:
                 await session.execute(
                     text("""
                     INSERT INTO users (
-                        user_uid, display_name, email, 
-                        phone, role, vehicle_type, plate
+                        user_uid, email
                     ) VALUES (
-                        :uid, :name, :email, 
-                        :phone, :role, :vehicle_type, :plate
+                        :uid, :email, 
                     )
                     """),
                     {
                         "uid": fb_user.uid,
-                        "name": fb_user.display_name or "Без имени",
                         "email": fb_user.email,
-                        "phone": fb_user.phone_number,
-                        "role": UserRole.user.value,
-                        "vehicle_type": None,
-                        "plate": None
                     }
                 )
                 log.info(f"Created new user: {user_uid}")
@@ -186,16 +179,12 @@ async def sync_user_profile(user_uid: str) -> UserOut:
                 await session.execute(
                     text("""
                     UPDATE users SET
-                        display_name = :name,
-                        email = :email,
-                        phone = :phone
+                        email = :email
                     WHERE user_uid = :uid
                     """),
                     {
                         "uid": fb_user.uid,
-                        "name": fb_user.display_name or "Без имени",
                         "email": fb_user.email,
-                        "phone": fb_user.phone_number
                     }
                 )
                 log.info(f"Updated user data: {user_uid}")

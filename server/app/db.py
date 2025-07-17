@@ -15,7 +15,7 @@ settings = get_settings()
 # Инициализация асинхронного SQLAlchemy-движка для PostgreSQL
 engine = create_async_engine(
     settings.database_url,
-    echo=True,          # Отключаем подробный SQL-лог
+    echo=False,          # Отключаем подробный SQL-лог
     pool_size=20,
     max_overflow=10,
     pool_pre_ping=True   # Автоматическая проверка соединения
