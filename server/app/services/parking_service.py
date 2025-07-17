@@ -20,7 +20,7 @@ MAX_RETRIES = 3          # Количество попыток при ошибк
 RETRY_DELAY = 15         # Задержка между попытками (секунды)
 
 # Просто переключатель: в тестах True, в проде — False
-IS_TEST = True
+IS_TEST = False
 MAX_TOTAL = 100      # Лимит получаемых записей для теста
 
 log      = logging.getLogger(__name__)

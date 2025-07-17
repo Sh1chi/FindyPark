@@ -11,6 +11,8 @@ from app.routes import parkings_routes, bookings_routes, assistant_routes, revie
 from app.services.parking_service import refresh_data       # периодический импорт open-data
 from app.services.user_service import refresh_user_data     # синхронизация профилей
 
+from app.services.occupancy_mocker import main as run_occupancy_mocker
+
 
 # Настраиваем базовый логгер
 logging.basicConfig(level=logging.INFO)
@@ -49,11 +51,14 @@ async def on_startup():
     Синхронизирует данные парковок и пользователей.
     """
     await test_connection()  # проверяем и логируем
-    asyncio.create_task(refresh_data())
 
     # Инициализируем Firebase Admin SDK
     cred = credentials.Certificate(settings.firebase_credentials_path)
     initialize_app(cred)
 
-    # Запускаем фоновые синхронизациии
-    asyncio.create_task(refresh_user_data())
+    # Запускаем фоновые задачи
+    asyncio.create_task(refresh_data())  # обновление данных парковок
+    asyncio.create_task(refresh_user_data())  # синхронизация пользователей
+
+    # Мок-данные
+    asyncio.create_task(run_occupancy_mocker())
