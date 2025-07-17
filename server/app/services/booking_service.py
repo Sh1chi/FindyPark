@@ -34,7 +34,7 @@ async def create_booking(data: BookingIn, user_uid: str) -> BookingOut:
         )
 
     async with async_session() as ses:
-        # 1. Проверка временных коллизий (ИСПРАВЛЕННЫЙ ЗАПРОС)
+        # Проверка временных коллизий
         conflict = await ses.execute(text("""
                SELECT COUNT(*) 
                FROM bookings
@@ -53,28 +53,53 @@ async def create_booking(data: BookingIn, user_uid: str) -> BookingOut:
                 detail="Выбранное время уже занято"
             )
 
-        # 2. Блокировка и обновление счётчика мест
-        updated = await ses.execute(text("""
-            UPDATE parkings
-            SET available_spaces = available_spaces - 1
-            WHERE id = :parking_id AND available_spaces > 0
-            RETURNING available_spaces
-        """), {"parking_id": data.parking_id})
+            # Получаем текущее количество свободных мест с блокировкой строки
+            current = await ses.execute(text("""
+                    SELECT available_spaces 
+                    FROM parkings 
+                    WHERE id = :parking_id
+                    FOR UPDATE
+                """), {"parking_id": data.parking_id})
+            current_availability = current.scalar()
 
-        if updated.scalar() is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Нет свободных мест"
-            )
+            if current_availability is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Парковка не найдена"
+                )
 
-        # 3. Создание бронирования
+            if current_availability <= 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Нет свободных мест"
+                )
+
+            # Атомарное обновление с проверкой текущего значения
+            updated = await ses.execute(text("""
+                    UPDATE parkings
+                    SET available_spaces = available_spaces - 1
+                    WHERE id = :parking_id 
+                    AND available_spaces = :current_spaces
+                    RETURNING available_spaces
+                """), {
+                "parking_id": data.parking_id,
+                "current_spaces": current_availability
+            })
+
+            if updated.scalar() is None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Количество мест изменилось, попробуйте снова"
+                )
+
+        # Создание бронирования
         booking_id = uuid.uuid4()
         await ses.execute(text("""
-            INSERT INTO bookings
-                (id, user_uid, parking_id, vehicle_type, plate, ts_from, ts_to)
-            VALUES
-                (:id, :user_uid, :parking_id, :vehicle_type, :plate, :ts_from, :ts_to)
-        """), {
+                    INSERT INTO bookings
+                        (id, user_uid, parking_id, vehicle_type, plate, ts_from, ts_to)
+                    VALUES
+                        (:id, :user_uid, :parking_id, :vehicle_type, :plate, :ts_from, :ts_to)
+                """), {
             "id": booking_id,
             "user_uid": user_uid,
             **data.dict()
