@@ -20,9 +20,9 @@ class ParkingAdapter(
 
         // Метод обновляет все нужные поля в каждом элементе списка
         fun bind(item: ParkingSpot) {
-            tvAddress.text = item.address
-            tvTotal.text = "Мест всего: ${item.capacity ?: "неизвестно"}"
-            tvFree.text  = "Мест свободно: ${item.free_spaces ?: "неизвестно"}"
+            tvAddress.text = item.name
+            tvTotal.text = item.address
+            tvFree.text  = item.parking_zone_number
         }
     }
 

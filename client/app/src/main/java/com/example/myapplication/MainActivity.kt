@@ -732,11 +732,15 @@ class MainActivity : AppCompatActivity() {
                 parkingTitle.text = it.name
                 parkingAddress.text = it.address
                 parkingCapacity.text = "Всего мест: " + it.capacity
+
                 parkingDisabled.text = "Инвалидных мест: " + it.capacity_disabled
                 parkingFreeSpaces.text = "Свободных мест: " + it.free_spaces
                 parkingDetails.text = it.parking_zone_number
                 lifecycleScope.launch {
                     try{
+                        val fresh = ApiClient.parkingApi.getParkingById(selectedParkingId!!)
+                        parkingFreeSpaces.text = "Свободных мест: ${fresh.free_spaces}"
+
                         val tariff = ApiClient.parkingApi.getTariff(selectedParkingId)
                         parkingTariff.text = "Стоимость в час: ${tariff.hour_price} руб"
                     }catch (e: Exception){
