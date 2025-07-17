@@ -17,12 +17,12 @@ DATASET_ID = 623
 ROWS_URL = f"https://apidata.mos.ru/v1/datasets/{DATASET_ID}/rows"
 
 MAX_ROWS = 1000          # Лимит размера страницы data.mos.ru
-REQUEST_TIMEOUT = 40     # Таймаут запроса (секунды)
+REQUEST_TIMEOUT = 60*60     # Таймаут запроса (секунды)
 MAX_RETRIES = 3          # Количество попыток при ошибках
 RETRY_DELAY = 15         # Задержка между попытками (секунды)
 
 # Просто переключатель: в тестах True, в проде — False
-IS_TEST = True
+IS_TEST = False
 MAX_TOTAL = 100      # Лимит получаемых записей для теста
 
 log      = logging.getLogger(__name__)

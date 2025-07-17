@@ -15,15 +15,12 @@ class ParkingOccupancyMocker:
     async def initialize_random_occupancy(self):
         """Инициализация случайными значениями при первом запуске"""
         async with async_session() as session:
-            # Получаем все парковки
             result = await session.execute(text("""
                 SELECT id, capacity 
                 FROM parkings
             """))
             parkings = result.all()
 
-            # Для каждой парковки генерируем случайное значение
-            # и сразу обновляем БД без проверки текущего значения
             for parking_id, capacity in parkings:
                 new_free_spaces = random.randint(0, capacity)
                 await session.execute(text("""
@@ -34,38 +31,41 @@ class ParkingOccupancyMocker:
                     "free_spaces": new_free_spaces,
                     "id": parking_id
                 })
-                logger.info(f"Initialized parking {parking_id}: {new_free_spaces}/{capacity}")
 
             await session.commit()
 
     async def update_occupancy_incrementally(self):
         """Обновление с учетом текущих значений в БД"""
         async with async_session() as session:
-            # Получаем текущее состояние из БД
             result = await session.execute(text("""
                 SELECT id, capacity, available_spaces
                 FROM parkings
                 ORDER BY random()
-                LIMIT 100
+                LIMIT 12000
                 FOR UPDATE
             """))
             parkings = result.all()
 
             updates = []
             for parking_id, capacity, current_spaces in parkings:
-                # Определяем изменение: +1 или -1
-                change = random.choice([-1, 1])
-                new_free = max(0, min(capacity, current_spaces + change))
+                # С вероятностью 75% увеличиваем загруженность (уменьшаем свободные места)
+                if random.random() < 0.75:
+                    # Уменьшаем свободные места
+                    decrease_amount = random.randint(1, 1)
+                    new_free = max(0, current_spaces - decrease_amount)
+                else:
+                    # С вероятностью 25% уменьшаем загруженность (увеличиваем свободные места)
+                    new_free = min(capacity, current_spaces + 1)
 
-                # Сохраняем для пакетного обновления
-                updates.append({
-                    "id": parking_id,
-                    "free_spaces": new_free,
-                    "old_spaces": current_spaces,
-                    "capacity": capacity
-                })
+                # Сохраняем только если значение изменилось
+                if new_free != current_spaces:
+                    updates.append({
+                        "id": parking_id,
+                        "free_spaces": new_free,
+                        "old_spaces": current_spaces
+                    })
 
-            #  Пакетное обновление
+            # Пакетное обновление
             for update in updates:
                 await session.execute(text("""
                     UPDATE parkings
