@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from cgitb import text
+from sqlalchemy import text
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -50,7 +50,6 @@ async def on_startup():
     Синхронизирует данные парковок и пользователей.
     """
     await test_connection()  # проверяем и логируем
-    asyncio.create_task(refresh_data())
 
     # Инициализируем Firebase Admin SDK
     cred = credentials.Certificate(settings.firebase_credentials_path)

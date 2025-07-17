@@ -1,8 +1,11 @@
 import asyncio
 import random
+import logging
 from app.db import async_session
 from sqlalchemy import text
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("occupancy_mocker")
 
 
 class ParkingOccupancyMocker:
@@ -10,47 +13,47 @@ class ParkingOccupancyMocker:
         self.first_run = True
 
     async def initialize_random_occupancy(self):
-        """Инициализация с учетом текущих значений в БД"""
+        """Инициализация случайными значениями при первом запуске"""
         async with async_session() as session:
-            # Получаем текущее состояние из БД
+            # Получаем все парковки
             result = await session.execute(text("""
-                SELECT id, capacity, available_spaces 
+                SELECT id, capacity 
                 FROM parkings
             """))
             parkings = result.all()
 
-            for parking_id, capacity, current_spaces in parkings:
-                # Устанавливаем случайное значение  не превышающее capacity
+            # Для каждой парковки генерируем случайное значение
+            # и сразу обновляем БД без проверки текущего значения
+            for parking_id, capacity in parkings:
                 new_free_spaces = random.randint(0, capacity)
-
-                # Обновляем только если значение изменилось
-                if new_free_spaces != current_spaces:
-                    await session.execute(text("""
-                        UPDATE parkings
-                        SET available_spaces = :free_spaces
-                        WHERE id = :id
-                    """), {
-                        "free_spaces": new_free_spaces,
-                        "id": parking_id
-                    })
+                await session.execute(text("""
+                    UPDATE parkings
+                    SET available_spaces = :free_spaces
+                    WHERE id = :id
+                """), {
+                    "free_spaces": new_free_spaces,
+                    "id": parking_id
+                })
+                logger.info(f"Initialized parking {parking_id}: {new_free_spaces}/{capacity}")
 
             await session.commit()
 
     async def update_occupancy_incrementally(self):
         """Обновление с учетом текущих значений в БД"""
         async with async_session() as session:
-            # 1. Получаем текущее состояние из БД
+            # Получаем текущее состояние из БД
             result = await session.execute(text("""
                 SELECT id, capacity, available_spaces
                 FROM parkings
                 ORDER BY random()
                 LIMIT 100
+                FOR UPDATE
             """))
             parkings = result.all()
 
             updates = []
             for parking_id, capacity, current_spaces in parkings:
-                #  +1 или -1
+                # Определяем изменение: +1 или -1
                 change = random.choice([-1, 1])
                 new_free = max(0, min(capacity, current_spaces + change))
 
@@ -62,15 +65,17 @@ class ParkingOccupancyMocker:
                     "capacity": capacity
                 })
 
-            # Пакетное обновление
+            #  Пакетное обновление
             for update in updates:
                 await session.execute(text("""
                     UPDATE parkings
                     SET available_spaces = :free_spaces
                     WHERE id = :id
+                    AND available_spaces = :old_spaces
                 """), {
                     "free_spaces": update["free_spaces"],
-                    "id": update["id"]
+                    "id": update["id"],
+                    "old_spaces": update["old_spaces"]
                 })
 
             await session.commit()
@@ -82,8 +87,9 @@ class ParkingOccupancyMocker:
             self.first_run = False
 
         while True:
+            logger.info("Starting incremental occupancy update...")
             await self.update_occupancy_incrementally()
-            await asyncio.sleep(60)  # Ждем 60 секунд
+            await asyncio.sleep(30)  # Ждем 30 секунд
 
 
 async def main():
