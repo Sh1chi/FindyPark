@@ -4,16 +4,10 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ProgressBar
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
-import androidx.core.widget.addTextChangedListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -21,8 +15,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import com.google.firebase.auth.ActionCodeSettings
-import kotlinx.coroutines.withContext
 
 class RegistrationActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
@@ -73,7 +65,7 @@ class RegistrationActivity : AppCompatActivity() {
 
         btnForgotPassword.setOnClickListener {
             AlertDialog.Builder(this@RegistrationActivity)
-                .setTitle("Тех.поддержка")
+                .setTitle("Тех.поддержка!")
                 .setMessage("Для связи с тех.поддержкой, пожалуйста, напишите в Telegram по одному из " +
                         "следующих тегов:\n@Sh1chik\n@qui_ibi\n@vova_barysh")
                 .setPositiveButton("ОК", null)
