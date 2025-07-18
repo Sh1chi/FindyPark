@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class RegistrationActivity : AppCompatActivity() {
+    private lateinit var progressBar: ProgressBar
     private lateinit var auth: FirebaseAuth
     private lateinit var btnForgotPassword: Button
     private lateinit var btnRegister: Button
@@ -31,7 +33,7 @@ class RegistrationActivity : AppCompatActivity() {
         auth = Firebase.auth
 
         // Инициализация элементов UI
-
+        progressBar = findViewById(R.id.progressBar)
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         btnRegister = findViewById(R.id.btnRegister)

@@ -48,6 +48,40 @@ async def get_parkings():
         for row in rows
     ]
 
+@router.get("/{parking_id}", response_model=Parking)
+async def get_parking_by_id(parking_id: int):
+    async with async_session() as session:
+        result = await session.execute(
+            text("SELECT * FROM parkings WHERE id = :id"),
+            {"id": parking_id}
+        )
+        row = result.first()
+        if not row:
+            raise HTTPException(404, "Парковка не найдена")
+        updated = await session.execute(
+            text("""
+                 SELECT id,
+                        parking_zone_number,
+                        name,
+                        address,
+                        adm_area,
+                        district,
+                        ST_Y(geom::geometry) AS lat,
+                        ST_X(geom::geometry) AS lon,
+                        capacity,
+                        capacity_disabled,
+                        available_spaces     AS free_spaces
+                 FROM parkings
+                 WHERE id = :id
+                 """),
+            {"id": parking_id}
+        )
+        row = updated.mappings().first()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Парковка не найдена")
+
+        return Parking(**row)
 
 @router.get("/nearby", response_model=list[Parking])
 async def list_parkings(

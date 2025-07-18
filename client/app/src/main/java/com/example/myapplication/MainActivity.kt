@@ -201,6 +201,7 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         // Инициализация Firebase Auth
         auth = Firebase.auth
         if (auth.currentUser == null) {
@@ -208,7 +209,6 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
-        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         // Инициализация элементов UI
@@ -731,12 +731,13 @@ class MainActivity : AppCompatActivity() {
                 selectedParkingId = it.id
                 parkingTitle.text = it.name
                 parkingAddress.text = it.address
-                parkingCapacity.text = "Всего мест: " + it.capacity
-                parkingDisabled.text = "Инвалидных мест: " + it.capacity_disabled
-                parkingFreeSpaces.text = "Свободных мест: " + it.free_spaces
+                parkingCapacity.text = "Всего мест: ${it.capacity}"
                 parkingDetails.text = it.parking_zone_number
                 lifecycleScope.launch {
                     try{
+                        val fresh = ApiClient.parkingApi.getParkingById(selectedParkingId!!)
+                        parkingFreeSpaces.text = "Свободных мест: ${fresh.free_spaces}"
+                        parkingDisabled.text = "Инвалидных мест: ${fresh.capacity_disabled}"
                         val tariff = ApiClient.parkingApi.getTariff(selectedParkingId)
                         parkingTariff.text = "Стоимость в час: ${tariff.hour_price} руб"
                     }catch (e: Exception){

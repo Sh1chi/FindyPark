@@ -93,7 +93,7 @@ class ParkingOccupancyMocker:
         while True:
             logger.info("Starting incremental occupancy update...")
             await self.update_occupancy_incrementally()
-            await asyncio.sleep(30)  # Ждем 30 секунд
+            await asyncio.sleep(60)  # Ждем 30 секунд
 
 
 async def main():
