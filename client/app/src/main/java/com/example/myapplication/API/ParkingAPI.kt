@@ -17,6 +17,9 @@ interface ParkingApi {
     @GET("/parkings")
     suspend fun getParkings(): List<ParkingSpot>
 
+    @GET("/parkings/{id}")
+    suspend fun getParkingById(@Path("id") id: Long): ParkingSpot
+
     @GET("/parkings/{parking_id}/tariff")
     suspend fun getTariff(
         @Path("parking_id") parkingId: Long?
